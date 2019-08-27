@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+
+    <meta charset='UTF-8'>
+    <title>Alloy Instance Tables</title>
+
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src='alloy.js'></script>
+    <link href="https://fonts.googleapis.com/css?family=Lato&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0 auto 4em auto;
+            font-family: 'Lato', sans-serif;
+            max-width: 960px;
+        }
+        h1, h2 {
+            margin: 0.75em 0;
+        }
+        .inset {
+            padding-left: 2em;
+        }
+        .center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .horizontal {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        table {
+            font-family: monospace;
+            table-layout: fixed;
+            border-collapse: collapse;
+            border: 1px solid #cdcdcd;
+            margin: 0 20px 20px 0;
+        }
+        .button {
+            cursor: pointer;
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #cdcdcd;
+            margin: 0.75em 10px 0.75em 0;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        .button:hover {
+            background-color: lightsteelblue;
+            border: 1px solid steelblue;
+        }
+        kbd {
+            background-color: #eee;
+            border-radius: 3px;
+            border: 1px solid #b4b4b4;
+            color: #333;
+            display: inline-block;
+            font-size: .85em;
+            font-weight: 700;
+            line-height: 1;
+            padding: 2px 4px;
+            white-space: nowrap;
+        }
+    </style>
+
+</head>
+<body>
+<h1>Alloy Instance Tables</h1>
+<div class='horizontal inset'>
+    <input type='file' id='input' style='display: none;'>
+    <div id='compact' class='button'>Compact View</div>
+    <div id='builtin' class='button'>Hide Built-in Signatures</div>
+    <div id='empty' class='button'>Hide Empty Tables</div>
+</div>
+<h2>Command</h2>
+<div id='command' class='horizontal inset'>
+    <p>None yet.</p>
+</div>
+<h2>Signatures</h2>
+<div id='sigs' class='horizontal inset'>
+    <p>None yet.</p>
+</div>
+<h2>Fields</h2>
+<div id='fields' class='horizontal inset'>
+    <p>None yet.</p>
+</div>
+<h2>Skolem</h2>
+<div id='skolems' class='horizontal inset'>
+    <p>None yet.</p>
+</div>
+<script src='table.js'></script>
+</body>
+</html>
