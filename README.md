@@ -16,17 +16,17 @@ The project is laid out as follows (italicized items are not included in the rep
 
 * _**build/**_
   * _**libs/**_
-    * _**Alloy-V-\*.jar**_ - The Alloy with Visualization Tools JAR file
+    * _**Sterling-\*.jar**_ - The Sterling JAR file
 * **gradle/** - Gradle wrapper directory ([more info](https://medium.com/@bherbst/understanding-the-gradle-wrapper-a62f35662ab7))
 * **libs/** - Directory containing regular Alloy JAR files
 * **src/**
   * **main/**
-    * **java/** - Java source code for Alloy with Visualization Tools
+    * **java/** - Sterling source code
     * **resources/**
       * **public/** - Directory containing all web pages and Javascript to display visualizations
 * **build.gradle** - The gradle build file that contains dependencies and build instructions
-* **gradlew** - The gradle wrapper script ([more info](https://medium.com/@bherbst/understanding-the-gradle-wrapper-a62f35662ab7)
-* **gradlew.bat** - The gradle wrapper script for Windows ([more info](https://medium.com/@bherbst/understanding-the-gradle-wrapper-a62f35662ab7)
+* **gradlew** - The gradle wrapper script ([more info](https://medium.com/@bherbst/understanding-the-gradle-wrapper-a62f35662ab7))
+* **gradlew.bat** - The gradle wrapper script for Windows ([more info](https://medium.com/@bherbst/understanding-the-gradle-wrapper-a62f35662ab7))
 * **README.md** - This file
 * **settings.gradle** - The gradle settings file
 
