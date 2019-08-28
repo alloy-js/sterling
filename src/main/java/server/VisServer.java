@@ -1,3 +1,5 @@
+package server;
+
 import java.awt.*;
 import java.io.IOException;
 import java.net.URI;
@@ -7,13 +9,14 @@ import java.nio.file.Paths;
 
 import static spark.Spark.*;
 
-class VisServer {
+public class VisServer {
 
+    private String home;
     private VisSocket socket;
 
     static int connections = 0;
 
-    VisServer () {
+    public VisServer() {
 
         // Let spark choose an available port
         port(0);
@@ -31,23 +34,13 @@ class VisServer {
         // Block until the server has started and the port has been determined
         awaitInitialization();
 
-        // Open a browser page using the correct port
-        if (Desktop.isDesktopSupported()) {
-
-            String home = "http://localhost:" + port();
-            Desktop desktop = Desktop.getDesktop();
-            try {
-                desktop.browse(URI.create(home));
-                System.out.println("Visualization server running: " + home);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-        }
+        // Assemble home page using correct port
+        home = "http://localhost:" + port();
+        System.out.println("Visualization server running: " + home);
 
     }
 
-    void currentInstance(String xml) {
+    public void currentInstance(String xml) {
 
         try {
             String content = readFile(xml);
@@ -55,6 +48,21 @@ class VisServer {
         } catch (IOException e) {
             System.err.println("Could not read instance XML:");
             e.printStackTrace();
+        }
+
+    }
+
+    public void openBrowser() {
+
+        if (Desktop.isDesktopSupported()) {
+
+            Desktop desktop = Desktop.getDesktop();
+            try {
+                desktop.browse(URI.create(home));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
         }
 
     }

@@ -33,7 +33,7 @@ sourceSets {
 
 jar {
     manifest {
-        attributes 'Main-Class': 'Alloy'
+        attributes 'Main-Class': 'Sterling'
     }
 }
 

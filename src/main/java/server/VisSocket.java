@@ -1,3 +1,5 @@
+package server;
+
 import org.eclipse.jetty.websocket.api.*;
 import org.eclipse.jetty.websocket.api.annotations.*;
 
@@ -22,6 +24,13 @@ public class VisSocket {
     @OnWebSocketClose
     public void closed(Session session, int status, String reason) {
         sessions.remove(session);
+        if (currentSession == session) {
+            if (sessions.size() > 0){
+                currentSession = sessions.lastElement();
+            } else {
+                currentSession = null;
+            }
+        }
         log("Connection closed. " + --VisServer.connections + " open connections.");
     }
 
@@ -31,8 +40,6 @@ public class VisSocket {
             case "current":
                 sendXML(session, currentXML);
                 break;
-            case "next":
-                log("Request next instance");
             default:
                 break;
         }

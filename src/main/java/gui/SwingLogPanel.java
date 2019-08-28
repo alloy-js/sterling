@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
+package gui;/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -44,7 +44,7 @@ import edu.mit.csail.sdg.alloy4.OurAntiAlias;
 import edu.mit.csail.sdg.alloy4.OurUtil;
 
 /**
- * This helper method is used by SimpleGUI; only the AWT Event Thread may call
+ * This helper method is used by gui.SimpleGUI; only the AWT Event Thread may call
  * methods in this class.
  */
 
@@ -147,7 +147,7 @@ final class SwingLogPanel {
      * @param background - the background color to use
      * @param regular - the color to use for regular messages
      * @param red - the color to use for red messages
-     * @param handler - the SimpleGUI parent
+     * @param handler - the gui.SimpleGUI parent
      */
     public SwingLogPanel(final JScrollPane parent, String fontName, int fontSize, final Color background, final Color regular, final Color red, final SimpleGUI handler) {
         this.handler = handler;

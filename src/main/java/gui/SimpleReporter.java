@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
+package gui;/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -45,8 +45,6 @@ import edu.mit.csail.sdg.alloy4.Version;
 import edu.mit.csail.sdg.alloy4.WorkerEngine.WorkerCallback;
 import edu.mit.csail.sdg.alloy4.WorkerEngine.WorkerTask;
 import edu.mit.csail.sdg.alloy4.XMLNode;
-import edu.mit.csail.sdg.alloy4viz.StaticInstanceReader;
-import edu.mit.csail.sdg.alloy4viz.VizGUI;
 import edu.mit.csail.sdg.ast.Command;
 import edu.mit.csail.sdg.ast.Module;
 import edu.mit.csail.sdg.ast.Sig;
@@ -56,15 +54,17 @@ import edu.mit.csail.sdg.translator.A4Solution;
 import edu.mit.csail.sdg.translator.A4SolutionReader;
 import edu.mit.csail.sdg.translator.A4SolutionWriter;
 import edu.mit.csail.sdg.translator.TranslateAlloyToKodkod;
+import viz.StaticInstanceReader;
+import viz.VizGUI;
 
-/** This helper method is used by SimpleGUI. */
+/** This helper method is used by gui.SimpleGUI. */
 
 final class SimpleReporter extends A4Reporter {
 
     public static final class SimpleCallback1 implements WorkerCallback {
 
         private final SimpleGUI         gui;
-        private final VizGUI            viz;
+        private final VizGUI viz;
         private final SwingLogPanel     span;
         private final Set<ErrorWarning> warnings = new HashSet<ErrorWarning>();
         private final List<String>      results  = new ArrayList<String>();

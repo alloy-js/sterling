@@ -1,3 +1,5 @@
+package gui;
+
 import static edu.mit.csail.sdg.alloy4.A4Preferences.AntiAlias;
 import static edu.mit.csail.sdg.alloy4.A4Preferences.AutoVisualize;
 import static edu.mit.csail.sdg.alloy4.A4Preferences.CoreGranularity;

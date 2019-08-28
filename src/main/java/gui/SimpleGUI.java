@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
+package gui;/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -146,7 +146,6 @@ import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.Version;
 import edu.mit.csail.sdg.alloy4.WorkerEngine;
 import edu.mit.csail.sdg.alloy4.XMLNode;
-import edu.mit.csail.sdg.alloy4viz.VizGUI;
 import edu.mit.csail.sdg.ast.Browsable;
 import edu.mit.csail.sdg.ast.Command;
 import edu.mit.csail.sdg.ast.Expr;
@@ -165,6 +164,10 @@ import edu.mit.csail.sdg.translator.A4SolutionReader;
 import edu.mit.csail.sdg.translator.A4Tuple;
 import edu.mit.csail.sdg.translator.A4TupleSet;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
+
+import server.SterlingPreferences;
+import server.VisServer;
+import viz.VizGUI;
 
 /**
  * Simple graphical interface for accessing various features of the analyzer.
@@ -209,7 +212,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
     private JFrame                frame;
 
     /** The JFrame for the visualizer window. */
-    private VizGUI                viz;
+    private VizGUI viz;
 
     /**
      * The "File", "Edit", "Run", "Option", "Window", and "Help" menus.
@@ -1312,7 +1315,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
     // ===============================================================================================================//
 
     /**
-     * This method refreshes the "Window" menu for either the SimpleGUI window
+     * This method refreshes the "Window" menu for either the gui.SimpleGUI window
      * (isViz==false) or the VizGUI window (isViz==true).
      */
     private Runner doRefreshWindow(Boolean isViz) {
@@ -1418,7 +1421,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
             JMenu cgMenu = addToMenu(optmenu, CoreGranularity);
             cgMenu.setEnabled(Solver.get() == SatSolver.MiniSatProverJNI);
 
-            addToMenu(optmenu, AutoVisualize, RecordKodkod);
+            addToMenu(optmenu, AutoVisualize, SterlingPreferences.OpenWebOnStartup, RecordKodkod);
 
             if (Version.experimental) {
                 addToMenu(optmenu, Unrolls);
@@ -2061,8 +2064,8 @@ public final class SimpleGUI implements ComponentListener, Listener {
         // public synchronized void callback(Object msg) {
         // if (toTry.size()==0) {
         // SwingUtilities.invokeLater(new Runnable() {
-        // public void run() { SimpleGUI.this.frame=frame;
-        // SimpleGUI.this.finishInit(args, windowWidth); }
+        // public void run() { gui.SimpleGUI.this.frame=frame;
+        // gui.SimpleGUI.this.finishInit(args, windowWidth); }
         // });
         // return;
         // }
@@ -2085,8 +2088,6 @@ public final class SimpleGUI implements ComponentListener, Listener {
 
         SimpleGUI.this.frame = frame;
         finishInit(args, windowWidth);
-
-        server = new VisServer();
 
     }
 
@@ -2140,9 +2141,16 @@ public final class SimpleGUI implements ComponentListener, Listener {
             wrap = false;
         }
 
+        // Initialize the visualization server
+        server = new VisServer();
+        if (SterlingPreferences.OpenWebOnStartup.get()) {
+            server.openBrowser();
+        }
+
         // Pre-load the visualizer
         viz = new VizGUI(false, "", windowmenu2, enumerator, evaluator);
         viz.doSetFontSize(FontSize.get());
+        viz.setServer(server);
 
         // Create the toolbar
         try {
@@ -2398,4 +2406,5 @@ public final class SimpleGUI implements ComponentListener, Listener {
             }
         };
     }
+
 }

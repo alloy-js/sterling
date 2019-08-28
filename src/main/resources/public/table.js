@@ -3,6 +3,7 @@ let open = d3.select('#open');
 let comp = d3.select('#compact');
 let blt = d3.select('#builtin');
 let emp = d3.select('#empty');
+let nxt = d3.select('#next');
 let cmd = d3.select('#command');
 let sig = d3.select('#sigs');
 let fld = d3.select('#fields');
@@ -12,24 +13,28 @@ let iscompact = false;
 let showbuiltins = true;
 let showemptys = true;
 
+let socket;
+
 initialize();
 
 function initialize () {
 
-    // Hide everything but the open button
+    // Hide all of the buttons
     comp.style('display', 'none');
     blt.style('display', 'none');
     emp.style('display', 'none');
+    nxt.style('display', 'none');
 
     // Set up event listeners
     open.on('click', () => input.click());
     comp.on('click', toggleCompact);
     blt.on('click', toggleBuiltins);
     emp.on('click', toggleEmptys);
+    nxt.on('click', requestNext);
 
-    const socket = new WebSocket('ws://' + location.hostname + ':' + location.port + '/alloy');
+    socket = new WebSocket('ws://' + location.hostname + ':' + location.port + '/alloy');
 
-    socket.addEventListener('open', function (event) {
+    socket.addEventListener('open', function () {
         socket.send('current');
     });
 
@@ -51,38 +56,11 @@ function initialize () {
             comp.style('display', null);
             blt.style('display', null);
             emp.style('display', null);
+            nxt.style('display', null);
 
         }
 
     });
-
-    // input.addEventListener('change', () => {
-    //
-    //     let file = input.files[0];
-    //     let reader = new FileReader();
-    //
-    //     reader.onload = () => {
-    //
-    //         // Build instance
-    //         let text = reader.result;
-    //         let instance = alloy.Instance.fromXML(text);
-    //
-    //         // Display tables
-    //         setCommand(instance.command());
-    //         setSignatures(instance.signatures());
-    //         setFields(instance.fields());
-    //         setSkolems(instance.skolems());
-    //
-    //         // Display buttons
-    //         comp.style('display', null);
-    //         blt.style('display', null);
-    //         emp.style('display', null);
-    //
-    //     };
-    //
-    //     reader.readAsText(file);
-    //
-    // });
 }
 
 function setCommand (command) {
@@ -320,6 +298,10 @@ function toggleEmptys () {
 
     emp.text(showemptys ? 'Hide Empty Tables' : 'Show Empty Tables');
 
+}
+
+function requestNext () {
+    socket.send('next');
 }
 
 function sigdisplay (d) {

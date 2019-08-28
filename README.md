@@ -21,7 +21,11 @@ The project is laid out as follows (italicized items are not included in the rep
 * **libs/** - Directory containing regular Alloy JAR files
 * **src/**
   * **main/**
-    * **java/** - Sterling source code
+    * **java/**
+      * **gui/** - The main Alloy GUI (alloy4whole)
+      * **server/** - The Spark server code for communicating with the browser
+      * **viz/** - The Alloy visualization window (alloy4viz)
+      * **Sterling.java** - The program entry point
     * **resources/**
       * **public/** - Directory containing all web pages and Javascript to display visualizations
 * **build.gradle** - The gradle build file that contains dependencies and build instructions
