@@ -165,7 +165,8 @@ import edu.mit.csail.sdg.translator.A4Tuple;
 import edu.mit.csail.sdg.translator.A4TupleSet;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
 
-import server.SterlingPreferences;
+import sterling.SterlingPreferences;
+import sterling.SterlingVersion;
 import server.VisServer;
 import viz.VizGUI;
 
@@ -382,7 +383,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
         if (t.isFile())
             frame.setTitle(t.getFilename());
         else
-            frame.setTitle("Alloy Analyzer " + Version.version());
+            frame.setTitle("Alloy Analyzer (sterling.Sterling) " + Version.version());
         toolbar.setBorder(new OurBorder(false, false, text.count() <= 1, false));
         int c = t.getCaret();
         int y = t.getLineOfOffset(c) + 1;
@@ -1226,7 +1227,9 @@ public final class SimpleGUI implements ComponentListener, Listener {
             String f = latestAutoInstance;
             latestAutoInstance = "";
             if (subrunningTask == 2)
-                viz.loadXML(f, true);
+                viz.loadXML(f, true, true);
+            else if (subrunningTask == 3)
+                viz.loadXML(f, true, false);
             else if (AutoVisualize.get() || subrunningTask == 1)
                 doVisualize("XML: " + f);
         }
@@ -1727,7 +1730,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
             }
         }
         if (arg.startsWith("XML: ")) { // XML: filename
-            viz.loadXML(Util.canon(arg.substring(5)), false);
+            viz.loadXML(Util.canon(arg.substring(5)), false, true);
         }
         return null;
     }
@@ -1749,7 +1752,6 @@ public final class SimpleGUI implements ComponentListener, Listener {
 
     /** This object performs solution enumeration. */
     private final Computer enumerator = new Computer() {
-
         @Override
         public String compute(Object input) {
             final String arg = (String) input;
@@ -1759,6 +1761,11 @@ public final class SimpleGUI implements ComponentListener, Listener {
             SimpleReporter.SimpleCallback1 cb = new SimpleReporter.SimpleCallback1(SimpleGUI.this, viz, log, VerbosityPref.get().ordinal(), latestAlloyVersionName, latestAlloyVersion);
             SimpleReporter.SimpleTask2 task = new SimpleReporter.SimpleTask2();
             task.filename = arg;
+            subrunningTask = viz.isVisible() ? 2 : 3;
+            runmenu.setEnabled(false);
+            runbutton.setVisible(false);
+            showbutton.setEnabled(false);
+            stopbutton.setVisible(true);
             try {
                 if (AlloyCore.isDebug())
                     WorkerEngine.runLocally(task, cb);
@@ -1773,11 +1780,6 @@ public final class SimpleGUI implements ComponentListener, Listener {
                 doStop(2);
                 return arg;
             }
-            subrunningTask = 2;
-            runmenu.setEnabled(false);
-            runbutton.setVisible(false);
-            showbutton.setEnabled(false);
-            stopbutton.setVisible(true);
             return arg;
         }
     };
@@ -2047,7 +2049,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
         frame.setSize(width, height);
         frame.setLocation(x, y);
         frame.setVisible(true);
-        frame.setTitle("Alloy Analyzer " + Version.version() + " loading... please wait...");
+        frame.setTitle("Alloy Analyzer (sterling.Sterling) " + Version.version() + " loading... please wait...");
         final int windowWidth = width;
         // We intentionally call setVisible(true) first before settings the
         // "please wait" title,
@@ -2091,6 +2093,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
 
         // Initialize the visualization server
         server = new VisServer(log);
+        server.setEnumerator(enumerator);
         viz.setServer(server);
         if (SterlingPreferences.OpenWebOnStartup.get()) {
             server.openBrowser();
@@ -2206,6 +2209,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
         all.add(status, BorderLayout.SOUTH);
 
         // Generate some informative log messages
+        log.logBold("sterling.Sterling " + SterlingVersion.version + " built " + SterlingVersion.builddate + "\n");
         log.logBold("Alloy Analyzer " + Version.version() + " built " + Version.buildDate() + "\n\n");
 
         // If on Mac, then register an application listener

@@ -1,3 +1,5 @@
+package sterling;
+
 import gui.SimpleGUI;
 
 public class Sterling {

@@ -1,5 +1,6 @@
 package server;
 
+import edu.mit.csail.sdg.alloy4.Computer;
 import gui.SwingLogPanel;
 
 import java.awt.*;
@@ -19,10 +20,6 @@ public class VisServer {
 
     static int connections = 0;
 
-    public VisServer () {
-        initialize();
-    }
-
     public VisServer(SwingLogPanel logPanel) {
         this.logPanel = logPanel;
         initialize();
@@ -32,7 +29,7 @@ public class VisServer {
 
         try {
             String content = readFile(xml);
-            socket.setCurrentXML(content);
+            socket.setCurrentXML(xml, content);
         } catch (IOException e) {
             System.err.println("Could not read instance XML:");
             e.printStackTrace();
@@ -53,6 +50,10 @@ public class VisServer {
 
         }
 
+    }
+
+    public void setEnumerator(Computer enumerator) {
+        if (socket != null) socket.setEnumerator(enumerator);
     }
 
     private void initialize() {

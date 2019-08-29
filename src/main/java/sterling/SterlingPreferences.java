@@ -1,4 +1,4 @@
-package server;
+package sterling;
 
 import edu.mit.csail.sdg.alloy4.A4Preferences.BooleanPref;
 

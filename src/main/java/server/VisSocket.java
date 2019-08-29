@@ -1,5 +1,7 @@
 package server;
 
+import edu.mit.csail.sdg.alloy4.Computer;
+import edu.mit.csail.sdg.alloy4.OurDialog;
 import org.eclipse.jetty.websocket.api.*;
 import org.eclipse.jetty.websocket.api.annotations.*;
 
@@ -11,6 +13,8 @@ public class VisSocket {
 
     private Vector<Session> sessions = new Vector<Session>();
     private Session currentSession;
+    private Computer enumerator;
+    private String currentXMLFile = "";
     private String currentXML = "";
     private boolean verbose = true;
 
@@ -40,14 +44,32 @@ public class VisSocket {
             case "current":
                 sendXML(session, currentXML);
                 break;
+            case "next":
+                requestNext();
+                break;
             default:
                 break;
         }
     }
 
-    void setCurrentXML(String xml) {
+    void setCurrentXML(String xmlFile, String xml) {
+        currentXMLFile = xmlFile;
         currentXML = xml;
         if (currentSession != null) sendXML(currentSession, currentXML);
+    }
+
+    void setEnumerator(Computer enumerator) {
+        this.enumerator = enumerator;
+    }
+
+    private void requestNext() {
+        if (enumerator != null && !currentXMLFile.isEmpty()) {
+            try {
+                enumerator.compute(currentXMLFile);
+            } catch (Throwable e) {
+                OurDialog.alert(e.getMessage());
+            }
+        }
     }
 
     private void sendXML(Session session, String xml) {

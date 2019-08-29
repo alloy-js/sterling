@@ -1003,7 +1003,7 @@ public final class VizGUI implements ComponentListener {
     }
 
     /** Load the XML instance. */
-    public void loadXML(final String fileName, boolean forcefully) {
+    public void loadXML(final String fileName, boolean forcefully, boolean openViz) {
         final String xmlFileName = Util.canon(fileName);
         File f = new File(xmlFileName);
         if (forcefully || !xmlFileName.equals(this.xmlFileName)) {
@@ -1017,7 +1017,7 @@ public final class VizGUI implements ComponentListener {
                 xmlLoaded.remove(xmlFileName);
                 OurDialog.alert("Cannot read or parse Alloy instance: " + xmlFileName + "\n\nError: " + e.getMessage());
                 if (xmlLoaded.size() > 0) {
-                    loadXML(xmlLoaded.get(xmlLoaded.size() - 1), false);
+                    loadXML(xmlLoaded.get(xmlLoaded.size() - 1), false, openViz);
                     return;
                 }
                 doCloseAll();
@@ -1039,7 +1039,7 @@ public final class VizGUI implements ComponentListener {
         settingsOpen = 0;
         thememenu.setEnabled(true);
         windowmenu.setEnabled(true);
-        if (frame != null) {
+        if (frame != null && openViz) {
             frame.setVisible(true);
             frame.setTitle("Alloy Visualizer " + Version.version() + " loading... Please wait...");
             OurUtil.show(frame);
@@ -1124,7 +1124,7 @@ public final class VizGUI implements ComponentListener {
         if (file == null)
             return null;
         Util.setCurrentDirectory(file.getParentFile());
-        loadXML(file.getPath(), true);
+        loadXML(file.getPath(), true, true);
         return null;
     }
 
@@ -1133,7 +1133,7 @@ public final class VizGUI implements ComponentListener {
      */
     private Runner doLoadInstance(String fileName) {
         if (!wrap)
-            loadXML(fileName, false);
+            loadXML(fileName, false, true);
         return wrapMe(fileName);
     }
 
@@ -1545,6 +1545,11 @@ public final class VizGUI implements ComponentListener {
     // null; }
     // return wrapMe();
     // }
+
+    public boolean isVisible() {
+        if (this.frame != null) return this.frame.isVisible();
+        return false;
+    }
 
     public void setServer(VisServer visServer) {
 
