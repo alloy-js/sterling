@@ -1,8 +1,8 @@
 # Sterling
 
-Sterling is Alloy extended to include visualizations generated using the alloy-js library. When an Alloy instance is displayed in the visualizer, a web page containing the alloy-js visualization will automatically be opened.
+Sterling is Alloy extended to include visualizations generated using the alloy-js library. A local webserver is created when Alloy is initialized and instance data is served automatically as solutions are found. The alloy-js library and supporting web pages are included to generate visualizations in the browser automatically.
 
-This project is a simple wrapper around Alloy that contains a basic server to enable communication with the browser and the alloy-js library to enable visualizations in the browser.  The focus of this project is bringing better visualization techniques to Alloy, and so the name Sterling seemed particularly appropriate. After all, sterling silver is an alloy of silver that is generally used to make things that look nice.
+The focus of this project is bringing better visualization techniques to Alloy, and so the name Sterling seemed particularly appropriate. After all, sterling silver is an alloy of silver that is generally used to make things that look nice.
 
 ## Components and Directory Structure
 
@@ -39,12 +39,12 @@ The project is laid out as follows (italicized items are not included in the rep
 To build the JAR:
 
 ```bash
-cd /location/of/alloy-vis
+cd /location/of/sterling
 ./gradlew shadowJar
 ```
 
 To clean the build directory:
 ```bash
-cd /location/of/alloy-vis
+cd /location/of/sterling
 ./gradlew clean
 ```
