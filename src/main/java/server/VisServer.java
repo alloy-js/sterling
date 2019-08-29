@@ -1,5 +1,7 @@
 package server;
 
+import gui.SwingLogPanel;
+
 import java.awt.*;
 import java.io.IOException;
 import java.net.URI;
@@ -13,31 +15,17 @@ public class VisServer {
 
     private String home;
     private VisSocket socket;
+    private SwingLogPanel logPanel;
 
     static int connections = 0;
 
-    public VisServer() {
+    public VisServer () {
+        initialize();
+    }
 
-        // Let spark choose an available port
-        port(0);
-
-        // Establish location of all static website files
-        staticFileLocation("public");
-
-        // Establish the websocket that handles communication
-        socket = new VisSocket();
-        webSocket("/alloy", socket);
-
-        // Spin up the server
-        init();
-
-        // Block until the server has started and the port has been determined
-        awaitInitialization();
-
-        // Assemble home page using correct port
-        home = "http://localhost:" + port();
-        System.out.println("Visualization server running: " + home);
-
+    public VisServer(SwingLogPanel logPanel) {
+        this.logPanel = logPanel;
+        initialize();
     }
 
     public void currentInstance(String xml) {
@@ -63,6 +51,52 @@ public class VisServer {
                 e.printStackTrace();
             }
 
+        }
+
+    }
+
+    private void initialize() {
+
+        // Let spark choose an available port
+        port(0);
+
+        // Establish location of all static website files
+        staticFileLocation("public");
+
+        // Establish the websocket that handles communication
+        socket = new VisSocket();
+        webSocket("/alloy", socket);
+
+        // Spin up the server
+        init();
+
+        // Block until the server has started and the port has been determined
+        awaitInitialization();
+
+        // Assemble home page using correct port
+        home = "http://localhost:" + port();
+        log("Visualization server running: ");
+        logWebLink(home, home);
+        log("\n\n");
+
+    }
+
+    private void log(String message) {
+
+        if (logPanel != null) {
+            logPanel.log(message);
+        } else {
+            System.out.println(message);
+        }
+
+    }
+
+    private void logWebLink(String message, String link) {
+
+        if (logPanel != null) {
+            logPanel.logWebLink(message, link);
+        } else {
+            System.out.println(message + '(' + link + ')');
         }
 
     }

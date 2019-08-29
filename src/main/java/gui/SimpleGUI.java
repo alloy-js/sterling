@@ -2089,6 +2089,15 @@ public final class SimpleGUI implements ComponentListener, Listener {
         SimpleGUI.this.frame = frame;
         finishInit(args, windowWidth);
 
+        // Initialize the visualization server
+        server = new VisServer(log);
+        viz.setServer(server);
+        if (SterlingPreferences.OpenWebOnStartup.get()) {
+            server.openBrowser();
+        }
+        log.logDivider();
+        log.flush();
+
     }
 
     private void finishInit(String[] args, int width) {
@@ -2141,16 +2150,9 @@ public final class SimpleGUI implements ComponentListener, Listener {
             wrap = false;
         }
 
-        // Initialize the visualization server
-        server = new VisServer();
-        if (SterlingPreferences.OpenWebOnStartup.get()) {
-            server.openBrowser();
-        }
-
         // Pre-load the visualizer
         viz = new VizGUI(false, "", windowmenu2, enumerator, evaluator);
         viz.doSetFontSize(FontSize.get());
-        viz.setServer(server);
 
         // Create the toolbar
         try {

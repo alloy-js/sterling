@@ -13,13 +13,13 @@ package gui;/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  * OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Font;
+import java.awt.*;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -48,7 +48,7 @@ import edu.mit.csail.sdg.alloy4.OurUtil;
  * methods in this class.
  */
 
-final class SwingLogPanel {
+public final class SwingLogPanel {
 
     /**
      * Try to wrap the input to about 60 characters per line; however, if a token is
@@ -262,6 +262,59 @@ final class SwingLogPanel {
             public final void mousePressed(MouseEvent e) {
                 if (handler != null)
                     handler.doVisualize(linkDestination);
+            }
+
+            @Override
+            public final void mouseClicked(MouseEvent e) {}
+
+            @Override
+            public final void mouseReleased(MouseEvent e) {}
+
+            @Override
+            public final void mouseEntered(MouseEvent e) {
+                label.setForeground(hoverColor);
+            }
+
+            @Override
+            public final void mouseExited(MouseEvent e) {
+                label.setForeground(linkColor);
+            }
+        });
+        StyleConstants.setComponent(linkStyle, label);
+        links.add(label);
+        reallyLog(".", linkStyle); // Any character would do; the "." will be
+        // replaced by the JLabel
+        log.setCaretPosition(doc.getLength());
+        lastSize = doc.getLength();
+    }
+
+    public void logWebLink(final String link, final String linkDestination) {
+        if (log == null || link.length() == 0)
+            return;
+        if (linkDestination == null || linkDestination.length() == 0) {
+            log(link);
+            return;
+        }
+        clearError();
+        StyledDocument doc = log.getStyledDocument();
+        Style linkStyle = doc.addStyle("link", styleRegular);
+        final JLabel label = OurUtil.make(OurAntiAlias.label(link), new Font(fontName, Font.BOLD, fontSize), linkColor);
+        label.setAlignmentY(0.8f);
+        label.setMaximumSize(label.getPreferredSize());
+        label.addMouseListener(new MouseListener() {
+
+            @Override
+            public final void mousePressed(MouseEvent e) {
+                if (Desktop.isDesktopSupported()) {
+
+                    Desktop desktop = Desktop.getDesktop();
+                    try {
+                        desktop.browse(URI.create(linkDestination));
+                    } catch (IOException ioe) {
+                        ioe.printStackTrace();
+                    }
+
+                }
             }
 
             @Override
