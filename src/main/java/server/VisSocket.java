@@ -47,6 +47,9 @@ public class VisSocket {
             case "next":
                 requestNext();
                 break;
+            case "ping":
+                sendPong(session);
+                break;
             default:
                 break;
         }
@@ -69,6 +72,15 @@ public class VisSocket {
             } catch (Throwable e) {
                 OurDialog.alert(e.getMessage());
             }
+        }
+    }
+
+    private void sendPong(Session session) {
+        try {
+            session.getRemote().sendString("pong");
+        } catch (IOException e) {
+            System.err.println("Unable to send pong");
+            e.printStackTrace();
         }
     }
 

@@ -62,8 +62,8 @@ public class VisServer {
         port(0);
 
         // Establish location of all static website files (use second line to enable reloading during dev)
-        staticFileLocation("public");
-//        externalStaticFileLocation("/home/tristan/research/alloy-js/sterling/src/main/resources/public");
+//        staticFileLocation("public");
+        externalStaticFileLocation("/home/tristan/research/alloy-js/alloy-ui/dist/");
 
         // Establish the websocket that handles communication
         socket = new VisSocket();
