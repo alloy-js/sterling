@@ -19,6 +19,7 @@ public class VisServer {
     private SwingLogPanel logPanel;
 
     static int connections = 0;
+    public static String staticFileLocation = null;
 
     public VisServer(SwingLogPanel logPanel) {
         this.logPanel = logPanel;
@@ -61,9 +62,12 @@ public class VisServer {
         // Let spark choose an available port
         port(0);
 
-        // Establish location of all static website files (use second line to enable reloading during dev)
-//        staticFileLocation("public");
-        externalStaticFileLocation("/home/tristan/research/alloy-js/alloy-ui/dist/");
+        // Establish location of all static website files
+        if (VisServer.staticFileLocation != null) {
+            externalStaticFileLocation(VisServer.staticFileLocation);
+        } else {
+            staticFileLocation("public");
+        }
 
         // Establish the websocket that handles communication
         socket = new VisSocket();

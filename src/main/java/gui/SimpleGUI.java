@@ -1894,44 +1894,60 @@ public final class SimpleGUI implements ComponentListener, Listener {
         if (args.length > 0) {
             boolean help = false;
             boolean quit = false;
+            boolean readstatic = false;
 
             for (String cmd : args) {
-                switch (cmd) {
 
-                    case "--worker" :
-                    case "-w" :
-                        WorkerEngine.main(args);
-                        break;
+                if (readstatic) {
 
-                    case "--version" :
-                    case "-v" :
-                        System.out.println(Version.version());
-                        break;
+                    VisServer.staticFileLocation = cmd;
+                    readstatic = false;
 
-                    case "--help" :
-                    case "-h" :
-                    case "-?" :
-                        help = true;
-                        break;
+                } else {
 
-                    case "--debug" :
-                    case "-d" :
-                        System.setProperty("debug", "yes");
-                        break;
+                    switch (cmd) {
 
-                    case "--quit" :
-                    case "-q" :
-                        quit = true;
-                        break;
+                        case "--static":
+                        case "-s":
+                            readstatic = true;
+                            break;
 
-                    default :
-                        if (cmd.endsWith(".als"))
-                            remainingArgs.add(cmd);
-                        else {
-                            System.out.println("Unknown cmd " + cmd);
+                        case "--worker":
+                        case "-w":
+                            WorkerEngine.main(args);
+                            break;
+
+                        case "--version":
+                        case "-v":
+                            System.out.println(Version.version());
+                            break;
+
+                        case "--help":
+                        case "-h":
+                        case "-?":
                             help = true;
-                        }
-                        break;
+                            break;
+
+                        case "--debug":
+                        case "-d":
+                            System.setProperty("debug", "yes");
+                            break;
+
+                        case "--quit":
+                        case "-q":
+                            quit = true;
+                            break;
+
+                        default:
+                            if (cmd.endsWith(".als"))
+                                remainingArgs.add(cmd);
+                            else {
+                                System.out.println("Unknown cmd " + cmd);
+                                help = true;
+                            }
+                            break;
+
+                    }
                 }
             }
 
