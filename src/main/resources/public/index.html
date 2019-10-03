@@ -1,104 +1,130 @@
 <!DOCTYPE html>
 <html lang='en'>
-<head>
+    <head>
+        <meta charset='UTF-8'>
+        <title>Sterling</title>
 
-    <meta charset='UTF-8'>
-    <title>Alloy Instance Tables</title>
+        <script src='js/highlight.js'></script>
+        <script src='js/sterling.js'></script>
+        <script src='js/dagre.js'></script>
 
-    <script src="https://d3js.org/d3.v5.min.js"></script>
-    <script src='alloy.js'></script>
-    <link href="https://fonts.googleapis.com/css?family=Lato&display=swap" rel="stylesheet">
-    <style>
-        body {
-            margin: 0 auto 4em auto;
-            font-family: 'Lato', sans-serif;
-            max-width: 960px;
-        }
-        h1, h2 {
-            margin: 0.75em 0;
-        }
-        .inset {
-            padding-left: 2em;
-        }
-        .center {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .horizontal {
-            display: flex;
-            flex-wrap: wrap;
-        }
-        table {
-            font-family: monospace;
-            table-layout: fixed;
-            border-collapse: collapse;
-            border: 1px solid #cdcdcd;
-            margin: 0 20px 20px 0;
-        }
-        .button {
-            cursor: pointer;
-            padding: 10px 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid #cdcdcd;
-            margin: 0.75em 10px 0.75em 0;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
-        }
-        .button:hover {
-            background-color: lightsteelblue;
-            border: 1px solid steelblue;
-        }
-        .bold {
-            border: 3px solid #ababab;
-        }
-        .bold:hover {
-            border: 3px solid steelblue;
-        }
-        kbd {
-            background-color: #eee;
-            border-radius: 3px;
-            border: 1px solid #b4b4b4;
-            color: #333;
-            display: inline-block;
-            font-size: .85em;
-            font-weight: 700;
-            line-height: 1;
-            padding: 2px 4px;
-            white-space: nowrap;
-        }
-    </style>
+        <link rel='stylesheet' href='css/github-gist.css'>
+        <link rel='stylesheet' href='css/index.css'>
 
-</head>
-<body>
-<h1>Alloy Instance Tables</h1>
-<div class='horizontal inset'>
-    <input type='file' id='input' style='display: none;'>
-    <div id='compact' class='button'>Compact View</div>
-    <div id='builtin' class='button'>Hide Built-in Signatures</div>
-    <div id='empty' class='button'>Hide Empty Tables</div>
-    <div id='next' class='button bold'>Next Solution</div>
-</div>
-<h2>Command</h2>
-<div id='command' class='horizontal inset'>
-    <p>None yet.</p>
-</div>
-<h2>Signatures</h2>
-<div id='sigs' class='horizontal inset'>
-    <p>None yet.</p>
-</div>
-<h2>Fields</h2>
-<div id='fields' class='horizontal inset'>
-    <p>None yet.</p>
-</div>
-<h2>Skolem</h2>
-<div id='skolems' class='horizontal inset'>
-    <p>None yet.</p>
-</div>
-<script src='table.js'></script>
-</body>
+    </head>
+    <body>
+        <div id='nav-bar' class='nav'>
+            <div class='nav-body'>
+                <div class='nav-header'>
+                    Sterling
+                </div>
+                <div id='nav-graph' class='nav-icon-button'>
+                    <i class='nav-icon fas fa-project-diagram'></i>
+                    Graph
+                </div>
+                <div id='nav-table' class='nav-icon-button'>
+                    <i class='nav-icon fas fa-table'></i>
+                    Table
+                </div>
+                <div id='nav-tree' class='nav-icon-button'>
+                    <i class='nav-icon fas fa-sitemap'></i>
+                    Tree
+                </div>
+                <div id='nav-source' class='nav-icon-button active'>
+                    <i class='nav-icon fas fa-file-alt'></i>
+                    Source
+                </div>
+                <div id='nav-next' class='nav-icon-button right'>
+                    <i class="nav-icon fas fa-arrow-alt-circle-right"></i>
+                    Next
+                </div>
+            </div>
+        </div>
+        <div id='status-bar' class='status'>
+            <div class='status-body'>
+                <div id='command-status' class='status-item'>Command: run Show
+                    for 6 expect
+                    1</div>
+                <div id='connection-status' class='right status-item'>Status:
+                    Connected</div>
+            </div>
+        </div>
+
+        <div id='graph-view' class='body-full'>
+            <div id='options-bar' class='options-bar'>
+                <div class='options-bar-body'>
+                    <div id='projections-bar' class='options-bar-body'>
+                        <div class='label'>
+                            Projections:
+                        </div>
+                        <div id='add-projection' class='icon-button dropdown'>
+                            <div class='icon'>
+                                <i class="fas fa-plus"></i>
+                            </div>
+                            <div class='dropdown-content'>
+                                <!--Dropdown items added using js-->
+                            </div>
+                        </div>
+                        <div id='projections-list' class='options-bar-body'>
+                            <!--Projections added using js-->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <svg id='graph' class='graph-view'></svg>
+        </div>
+        <div id='table-view' class='body-full'>
+            <div class='options-bar'>
+                <div class='options-bar-body'>
+                    <div id='table-compact-view' class='text-icon-button'>
+                        <div class='icon'>
+                            <i class="fas fa-compress-arrows-alt"></i>
+                        </div>
+                        <div class='text'>
+                            Compact View
+                        </div>
+                    </div>
+                    <div id='table-built-ins' class='text-icon-button'>
+                        <div class='icon'>
+                            <i class="far fa-eye"></i>
+                        </div>
+                        <div class='text'>
+                            Show Built-in Signatures
+                        </div>
+                    </div>
+                    <div id='table-emptys' class='text-icon-button'>
+                        <div class='icon'>
+                            <i class="far fa-eye"></i>
+                        </div>
+                        <div class='text'>
+                            Show Empty Tables
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id='tables' class='table-container'></div>
+        </div>
+        <div id='tree-view' class='body-full'>
+            <div class='options-bar'></div>
+            <svg class='treeview' id='tree'></svg>
+        </div>
+        <div id='source-view' class='body'>
+            <div class='filetree'></div>
+            <div class='fileview'>
+                <div class='gutter'></div>
+                <div class='editor'></div>
+            </div>
+        </div>
+        <script>
+            let ui = new sterling.UI()
+                .nav_bar('#nav-bar')
+                .status_bar('#status-bar')
+                .graph_view('#graph-view')
+                .table_view('#table-view')
+                .tree_view('#tree-view')
+                .source_view('#source-view')
+                .connect();
+            ui.show_graph();
+        </script>
+    </body>
 </html>
