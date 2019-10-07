@@ -48,3 +48,8 @@ To clean the build directory:
 cd /location/of/sterling
 ./gradlew clean
 ```
+
+## Releasing
+
+Before performing the final build before a release, increment the version field in the [build.gradle](build.gradle)
+file. This will update the version numbers displayed in the tool as well as the filename of the JAR.

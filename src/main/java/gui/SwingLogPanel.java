@@ -305,7 +305,7 @@ public final class SwingLogPanel {
 
             @Override
             public final void mousePressed(MouseEvent e) {
-                if (Desktop.isDesktopSupported()) {
+                if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
 
                     Desktop desktop = Desktop.getDesktop();
                     try {
@@ -313,6 +313,10 @@ public final class SwingLogPanel {
                     } catch (IOException ioe) {
                         ioe.printStackTrace();
                     }
+
+                } else {
+
+                    System.out.println("Unable to open browser automatically. Please open a browser and navigate to " + linkDestination);
 
                 }
             }

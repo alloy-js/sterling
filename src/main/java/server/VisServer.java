@@ -40,7 +40,7 @@ public class VisServer {
 
     public void openBrowser() {
 
-        if (Desktop.isDesktopSupported()) {
+        if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
 
             Desktop desktop = Desktop.getDesktop();
             try {
@@ -48,6 +48,10 @@ public class VisServer {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+
+        } else {
+
+            System.out.println("Unable to open browser automatically. Please open a browser and navigate to " + home);
 
         }
 
@@ -84,6 +88,9 @@ public class VisServer {
         log("Visualization server running: ");
         logWebLink(home, home);
         log("\n\n");
+
+        // Print to stdout just in case things aren't displaying correctly in Alloy
+        System.out.println("Visuzalization server running: " + home);
 
     }
 
