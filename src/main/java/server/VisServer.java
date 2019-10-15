@@ -20,6 +20,7 @@ public class VisServer {
 
     static int connections = 0;
     public static String staticFileLocation = null;
+    public static int port = 0;
 
     public VisServer(SwingLogPanel logPanel) {
         this.logPanel = logPanel;
@@ -64,7 +65,7 @@ public class VisServer {
     private void initialize() {
 
         // Let spark choose an available port
-        port(0);
+        port(VisServer.port);
 
         // Establish location of all static website files
         if (VisServer.staticFileLocation != null) {

@@ -1895,6 +1895,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
             boolean help = false;
             boolean quit = false;
             boolean readstatic = false;
+            boolean readport = false;
 
             for (String cmd : args) {
 
@@ -1903,6 +1904,18 @@ public final class SimpleGUI implements ComponentListener, Listener {
                     VisServer.staticFileLocation = cmd;
                     readstatic = false;
 
+                } else if (readport) {
+
+                    int port;
+
+                    try {
+                        port = Integer.parseInt(cmd);
+                    } catch (NumberFormatException e) {
+                        port = 0;
+                    }
+
+                    VisServer.port = port;
+
                 } else {
 
                     switch (cmd) {
@@ -1910,6 +1923,11 @@ public final class SimpleGUI implements ComponentListener, Listener {
                         case "--static":
                         case "-s":
                             readstatic = true;
+                            break;
+
+                        case "--port":
+                        case "-p":
+                            readport = true;
                             break;
 
                         case "--worker":
