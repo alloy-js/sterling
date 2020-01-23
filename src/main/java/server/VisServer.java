@@ -59,7 +59,9 @@ public class VisServer {
     }
 
     public void setEnumerator(Computer enumerator) {
+
         if (socket != null) socket.setEnumerator(enumerator);
+
     }
 
     private void initialize() {

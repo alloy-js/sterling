@@ -30,6 +30,10 @@
                     <i class='nav-icon fas fa-sitemap'></i>
                     Tree
                 </div>
+                <div id='nav-eval' class='nav-icon-button'>
+                    <i class="nav-icon fas fa-terminal"></i>
+                    Evaluator
+                </div>
                 <div id='nav-source' class='nav-icon-button active'>
                     <i class='nav-icon fas fa-file-alt'></i>
                     Source
@@ -66,7 +70,25 @@
                             </div>
                         </div>
                         <div id='projections-list' class='options-bar-body'>
-                            <!--Projections added using js-->
+                            <!--<div class='combo-button dropdown'>-->
+                                <!--<div class='icon'>-->
+                                    <!--<i class="fas fa-chevron-left"></i>-->
+                                <!--</div>-->
+                                <!--<div class='text'>-->
+                                    <!--State$0-->
+                                <!--</div>-->
+                                <!--<div class='icon'>-->
+                                    <!--<i class="fas fa-chevron-right"></i>-->
+                                <!--</div>-->
+                                <!--<div class='icon separated'>-->
+                                    <!--<i class='fas fa-times'></i>-->
+                                <!--</div>-->
+                                <!--<div class='dropdown-content' style='display:flex'>-->
+                                    <!--<div class='dropdown-item'>-->
+                                        <!--State$1-->
+                                    <!--</div>-->
+                                <!--</div>-->
+                            <!--</div>-->
                         </div>
                     </div>
                 </div>
@@ -108,6 +130,19 @@
             <div class='options-bar'></div>
             <svg class='treeview' id='tree'></svg>
         </div>
+        <div id='eval-view' class='body-full'>
+            <div class='eval'>
+                <div id='eval-editor' class='eval-editor'>
+                    <div id='eval-output' class='eval-output'></div>
+                    <div id='eval-console' class='eval-input'>
+                        <textarea id='eval-input'
+                                  autocomplete='off'
+                                  placeholder='Enter an expression...'></textarea>
+                    </div>
+                </div>
+                <div id='eval-display' class='eval-display'></div>
+            </div>
+        </div>
         <div id='source-view' class='body'>
             <div class='filetree'></div>
             <div class='fileview'>
@@ -119,12 +154,13 @@
             let ui = new sterling.UI()
                 .nav_bar('#nav-bar')
                 .status_bar('#status-bar')
+                .eval_view('#eval-view')
                 .graph_view('#graph-view')
                 .table_view('#table-view')
                 .tree_view('#tree-view')
                 .source_view('#source-view')
                 .connect();
-            ui.show_graph();
+            ui.show_eval();
         </script>
     </body>
 </html>
