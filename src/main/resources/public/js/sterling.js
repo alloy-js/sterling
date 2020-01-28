@@ -6530,10 +6530,11 @@
             instance._signatures = Array.from(signatures.values());
             instance._fields = Array.from(fields.values());
             instance._skolem = Array.from(skolem.values());
+
             // Save model source
             doc.selectAll('source')
                 .each(function () {
-                let s = select(this), f = s.attr('filename'), c = s.attr('content');
+                let s = select(this), f = s.attr('filename'), c = s.text();
                 instance._sources.set(f, c);
             });
             return instance;
@@ -6727,7 +6728,11 @@
                 this._ws.onclose = null;
                 this._ws.close();
             }
-            this._ws = new WebSocket('ws://' + location.hostname + ':' + location.port + '/alloy');
+
+			// CHANGED
+            //this._ws = new WebSocket('ws://' + location.hostname + ':' + location.port + '/alloy');
+			this._ws = new WebSocket('ws://localhost:' + window.location.search.slice(1));
+
             this._ws.onopen = this._on_open.bind(this);
             this._ws.onclose = this._on_close.bind(this);
             this._ws.onerror = this._on_error.bind(this);
@@ -6783,6 +6788,7 @@
                     this._heartbeat_count += 1;
                     break;
                 case 'XML:':
+                    console.log(data);
                     if (data.length) {
                         let instance = Instance.fromXML(data);
                         if (this._on_instance_cb)
@@ -6885,7 +6891,7 @@
         }
         set_command(command) {
             if (this._command)
-                this._command.text('Command: ' + command);
+                this._command.html('Command: ' + command);
         }
         set_connection_status(connection) {
             if (this._connection)
@@ -8785,25 +8791,27 @@
         }
         _make_voronoi() {
             let points = this._edge.points();
-            let delaunay = Delaunay
-                .from(points, d => d.x, d => d.y)
-                .voronoi(_padded_bbox(points, 20));
-            let paths = Array.from(delaunay.cellPolygons());
-            this._delaunaygroup
-                .attr('fill', 'transparent')
-                .attr('stroke', 'none')
-                .selectAll('path')
-                .data(paths)
-                .join('path')
-                .attr('d', line())
-                .on('mouseover', (d, i) => {
-                this._edge.highlight(points[i].element);
-            })
-                .on('mouseout', () => {
-                this._edge.highlight(null);
-            });
-            this._delaunaygroup
-                .raise();
+            if (points.length > 0){
+                let delaunay = Delaunay
+                    .from(points, d => d.x, d => d.y)
+                    .voronoi(_padded_bbox(points, 20));
+                let paths = Array.from(delaunay.cellPolygons());
+                this._delaunaygroup
+                    .attr('fill', 'transparent')
+                    .attr('stroke', 'none')
+                    .selectAll('path')
+                    .data(paths)
+                    .join('path')
+                    .attr('d', line())
+                    .on('mouseover', (d, i) => {
+                    this._edge.highlight(points[i].element);
+                })
+                    .on('mouseout', () => {
+                    this._edge.highlight(null);
+                });
+                this._delaunaygroup
+                    .raise();
+            }
         }
     }
     function _edge_label(edge) {
@@ -8874,6 +8882,7 @@
                 if (d.expressionType() === 'signature')
                     return d.signatures().concat(d.atoms());
             });
+
             // Build all edges by getting all tuples and projecting
             let edges = this._instance
                 .tuples()
@@ -8884,14 +8893,14 @@
                 });
                 return {
                     data: tuple,
-                    source: atoms.length ? atoms[0] : null,
-                    target: atoms.length ? atoms[atoms.length - 1] : null,
+                    source: atoms.length >= 2 ? atoms[0] : null,
+                    target: atoms.length >= 2 ? atoms[atoms.length - 1] : null,
                     middle: atoms.length > 2 ? atoms.slice(1, atoms.length - 1) : []
                 };
             })
-                .filter(edge => edge.source !== null && edge.target !== null)
-                .filter(edge => !this._builtin || !edge_is_builtin(edge))
-                .filter(edge => !this._private || !edge_is_private(edge));
+            .filter(edge => edge.source !== null && edge.target !== null)
+            .filter(edge => !this._builtin || !edge_is_builtin(edge))
+            .filter(edge => !this._private || !edge_is_private(edge));
             // Determine the set of all nodes used in a relation
             let nodeset = new Set();
             edges.forEach(edge => edge.data.atoms().forEach(atom => nodeset.add(atom.id())));
@@ -8917,15 +8926,15 @@
                         });
                     }
                     // (Optionally) Remove atoms that are not part of a relation
-                    if (this._disconnected && node.children) {
-                        node.children = node.children.filter(child => {
-                            // If a child node is a signature, we always want to
-                            // include it.  If not, it is an atom and we only want
-                            // to include it if it is visible as part of an edge
-                            return child.data.expressionType() === 'signature'
-                                || visibleset.has(child.data.id());
-                        });
-                    }
+                    // if (this._disconnected && node.children) {
+                    //     node.children = node.children.filter(child => {
+                    //         // If a child node is a signature, we always want to
+                    //         // include it.  If not, it is an atom and we only want
+                    //         // to include it if it is visible as part of an edge
+                    //         return child.data.expressionType() === 'signature'
+                    //             || visibleset.has(child.data.id());
+                    //     });
+                    // }
                     // Remove atoms that are part of a projected signature
                     if (node.children) {
                         let sigs = Array.from(this._projections.keys());
@@ -10074,7 +10083,7 @@
                     .classed('active', d => d === file);
                 // Set the editor text
                 this._code
-                    .text(file.text);
+                    .html(file.text);
                 // Highlight the code
                 hljs.highlightBlock(this._code.node());
                 // Update line numbers
@@ -10196,6 +10205,12 @@
             this._table_view = null;
             this._tree_view = null;
             this._source_view = null;
+
+            document.onkeydown = (e) => {
+                if ([32, 39, 78].includes(e.keyCode)) {    // [space, right, n]
+                    this._alloy.request_next();
+                }
+            };
         }
         // Initializers
         connect() {
