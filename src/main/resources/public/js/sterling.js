@@ -7140,7 +7140,7 @@
             // Save model source
             doc.selectAll('source')
                 .each(function () {
-                let s = select(this), f = s.attr('filename'), c = s.attr('content');
+                let s = select(this), f = s.attr('filename'), c = s.text();
                 instance._sources.set(f, c);
             });
             return instance;
@@ -7310,127 +7310,6 @@
         };
     }
 
-    class AlloyConnection {
-        constructor() {
-            this._ws = null;
-            this._heartbeat_count = 0;
-            this._heartbeat_id = null;
-            this._heartbeat_interval = 15000;
-            this._heartbeat_latency = 0;
-            this._heartbeat_timestamp = 0;
-            this._on_connected_cb = null;
-            this._on_disconnected_cb = null;
-            this._on_error_cb = null;
-            this._on_instance_cb = null;
-        }
-        average_latency() {
-            if (this._heartbeat_count > 0) {
-                return this._heartbeat_latency / this._heartbeat_count;
-            }
-            return 0;
-        }
-        connect() {
-            if (this._ws) {
-                this._ws.onclose = null;
-                this._ws.close();
-            }
-            this._ws = new WebSocket('ws://' + location.hostname + ':' + location.port + '/alloy');
-            this._ws.onopen = this._on_open.bind(this);
-            this._ws.onclose = this._on_close.bind(this);
-            this._ws.onerror = this._on_error.bind(this);
-            this._ws.onmessage = this._on_message.bind(this);
-        }
-        on_connected(cb) {
-            this._on_connected_cb = cb;
-            return this;
-        }
-        on_disconnected(cb) {
-            this._on_disconnected_cb = cb;
-            return this;
-        }
-        on_error(cb) {
-            this._on_error_cb = cb;
-            return this;
-        }
-        on_eval(cb) {
-            this._on_eval_cb = cb;
-            return this;
-        }
-        on_instance(cb) {
-            this._on_instance_cb = cb;
-            return this;
-        }
-        request_current() {
-            if (this._ws)
-                this._ws.send('current');
-            return this;
-        }
-        request_eval(id, command) {
-            if (this._on_eval_cb) {
-                if (this._ws) {
-                    this._ws.send('EVL:' + id + ':' + command);
-                }
-                else {
-                    this._on_eval_cb(`EVL:${id}:No connection.`);
-                }
-            }
-            return this;
-        }
-        request_next() {
-            if (this._ws)
-                this._ws.send('next');
-            return this;
-        }
-        _on_open(e) {
-            this._reset_heartbeat();
-            if (this._on_connected_cb)
-                this._on_connected_cb();
-        }
-        _on_close(e) {
-            this._ws = null;
-            if (this._on_disconnected_cb)
-                this._on_disconnected_cb();
-        }
-        _on_error(e) {
-            if (this._on_error_cb)
-                this._on_error_cb(e);
-        }
-        _on_message(e) {
-            this._reset_heartbeat();
-            let header = e.data.slice(0, 4);
-            let data = e.data.slice(4);
-            switch (header) {
-                case 'pong':
-                    this._heartbeat_latency += performance.now() - this._heartbeat_timestamp;
-                    this._heartbeat_count += 1;
-                    break;
-                case 'EVL:':
-                    if (this._on_eval_cb)
-                        this._on_eval_cb(e.data);
-                    break;
-                case 'XML:':
-                    if (data.length) {
-                        let instance = Instance.fromXML(data);
-                        if (this._on_instance_cb)
-                            this._on_instance_cb(instance);
-                    }
-                    break;
-                default:
-                    break;
-            }
-        }
-        _reset_heartbeat() {
-            clearTimeout(this._heartbeat_id);
-            this._heartbeat_id = window.setTimeout(this._ping.bind(this), this._heartbeat_interval);
-        }
-        _ping() {
-            if (this._ws) {
-                this._heartbeat_timestamp = performance.now();
-                this._ws.send('ping');
-            }
-        }
-    }
-
     class NavBar {
         constructor(selection) {
             this._navbar = selection;
@@ -7505,6 +7384,7 @@
             this._make_active('nav-tree');
         }
         _make_active(selector) {
+            this._active = selector;
             this._navbar
                 .selectAll('.nav-icon-button')
                 .classed('active', function () {
@@ -7523,7 +7403,7 @@
         }
         set_command(command) {
             if (this._command)
-                this._command.text('Command: ' + command);
+                this._command.html('Command: ' + command);
         }
         set_connection_status(connection) {
             if (this._connection)
@@ -7531,19 +7411,134 @@
         }
     }
 
-    class View {
-        constructor(selection) {
-            this._view_selection = selection;
+    class AlloyConnection {
+        constructor() {
+            this._ws = null;
+            this._connected = false;
+            this._heartbeat_count = 0;
+            this._heartbeat_id = null;
+            this._heartbeat_interval = 15000;
+            this._heartbeat_latency = 0;
+            this._heartbeat_timestamp = 0;
+            this._on_connected_cb = null;
+            this._on_disconnected_cb = null;
+            this._on_error_cb = null;
+            this._on_instance_cb = null;
         }
-        show() {
-            if (this._view_selection)
-                this._view_selection.style('display', null);
-            this._on_show();
+        average_latency() {
+            if (this._heartbeat_count > 0) {
+                return this._heartbeat_latency / this._heartbeat_count;
+            }
+            return 0;
         }
-        hide() {
-            if (this._view_selection)
-                this._view_selection.style('display', 'none');
-            this._on_hide();
+        connect() {
+            if (this._ws) {
+                this._ws.onclose = null;
+                this._ws.close();
+            }
+            // For Forge:
+            // this._ws = new WebSocket('ws://localhost:' + window.location.search.slice(1));
+            // For Alloy:
+            this._ws = new WebSocket('ws://' + location.hostname + ':' + location.port + '/alloy');
+            this._ws.onopen = this._on_open.bind(this);
+            this._ws.onclose = this._on_close.bind(this);
+            this._ws.onerror = this._on_error.bind(this);
+            this._ws.onmessage = this._on_message.bind(this);
+        }
+        connected() {
+            return this._connected;
+        }
+        on_connected(cb) {
+            this._on_connected_cb = cb;
+            return this;
+        }
+        on_disconnected(cb) {
+            this._on_disconnected_cb = cb;
+            return this;
+        }
+        on_error(cb) {
+            this._on_error_cb = cb;
+            return this;
+        }
+        on_eval(cb) {
+            this._on_eval_cb = cb;
+            return this;
+        }
+        on_instance(cb) {
+            this._on_instance_cb = cb;
+            return this;
+        }
+        request_current() {
+            if (this._ws)
+                this._ws.send('current');
+            return this;
+        }
+        request_eval(id, command) {
+            if (this._on_eval_cb) {
+                if (this._ws) {
+                    this._ws.send('EVL:' + id + ':' + command);
+                }
+                else {
+                    this._on_eval_cb(`EVL:${id}:No connection.`);
+                }
+            }
+            return this;
+        }
+        request_next() {
+            if (this._ws)
+                this._ws.send('next');
+            return this;
+        }
+        _on_open(e) {
+            this._connected = true;
+            this._reset_heartbeat();
+            if (this._on_connected_cb)
+                this._on_connected_cb();
+        }
+        _on_close(e) {
+            this._connected = false;
+            this._ws = null;
+            if (this._on_disconnected_cb)
+                this._on_disconnected_cb();
+        }
+        _on_error(e) {
+            if (this._on_error_cb)
+                this._on_error_cb(e);
+        }
+        _on_message(e) {
+            this._reset_heartbeat();
+            let header = e.data.slice(0, 4);
+            let data = e.data.slice(4);
+            switch (header) {
+                case 'pong':
+                    this._heartbeat_latency += performance.now() - this._heartbeat_timestamp;
+                    this._heartbeat_count += 1;
+                    break;
+                case 'EVL:':
+                    if (this._on_eval_cb)
+                        this._on_eval_cb(e.data);
+                    break;
+                case 'XML:':
+                    console.log(data);
+                    if (data.length) {
+                        let instance = Instance.fromXML(data);
+                        if (this._on_instance_cb)
+                            this._on_instance_cb(instance);
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+        _reset_heartbeat() {
+            clearTimeout(this._heartbeat_id);
+            this._heartbeat_id = window.setTimeout(this._ping.bind(this), this._heartbeat_interval);
+        }
+        _ping() {
+            if (this._ws) {
+                this._heartbeat_timestamp = performance.now();
+                this._ws.send('ping');
+            }
         }
     }
 
@@ -8318,301 +8313,1041 @@
         }
     };
 
-    class EvaluatorStage {
+    class View {
         constructor(selection) {
-            this._stage = null;
-            this._svg = null;
-            this._type = 'graph';
-            this._stage = selection;
+            this._view_selection = selection;
         }
-        render(expression) {
-            if (expression.error)
-                return this.clear();
-            const result = expression.result;
-            const re = /\{(.*)\}/g;
-            if (re.test(result)) {
-                if (result === '{}')
-                    return this.clear();
-                const raw_tuples = result.slice(1, -1).split(',');
-                const tuples = raw_tuples
-                    .map(tuple => tuple.split('->')
-                    .map(atom => atom.trim()));
-                this._force(tuples);
+        show() {
+            if (this._view_selection)
+                this._view_selection.style('display', null);
+            this._on_show();
+        }
+        hide() {
+            if (this._view_selection)
+                this._view_selection.style('display', 'none');
+            this._on_hide();
+        }
+    }
+
+    /**
+     * @author mrdoob / http://mrdoob.com/
+     */
+    class EventDispatcher {
+        constructor() {
+            this._listeners = {};
+        }
+        addEventListener(type, listener) {
+            let listeners = this._listeners;
+            if (listeners[type] === undefined) {
+                listeners[type] = [];
             }
-            else {
-                this.clear();
+            if (listeners[type].indexOf(listener) === -1) {
+                listeners[type].push(listener);
             }
         }
-        clear() {
-            this._stage.selectAll('*').remove();
+        hasEventListener(type, listener) {
+            if (this._listeners === undefined)
+                return false;
+            let listeners = this._listeners;
+            return listeners[type] !== undefined && listeners[type].indexOf(listener) !== -1;
         }
-        _force(tuples) {
-            this.clear();
-            const canvas = this._stage.append('canvas');
-            const context = canvas.node().getContext('2d');
-            const width = parseInt(canvas.style('width'));
-            const height = parseInt(canvas.style('height'));
-            const radius = 30;
-            canvas.attr('width', width);
-            canvas.attr('height', height);
-            const atomset = new Set();
-            tuples.forEach(tuple => tuple.forEach(atom => atomset.add(atom)));
-            const nodes = Array.from(atomset).map(atom => ({ id: atom }));
-            const links = tuples
-                .filter(tuple => tuple.length > 1)
-                .map(tuple => {
-                return {
-                    id: tuple.join('->'),
-                    source: tuple[0],
-                    target: tuple[tuple.length - 1]
-                };
-            });
-            const simulation$1 = simulation(nodes)
-                .force('link', link()
-                .id(d => d.id)
-                .links(links)
-                .distance(4 * radius))
-                .force('charge', manyBody().strength(-100))
-                .force('center', center(width / 2, height / 2))
-                .on('tick', ticked);
-            canvas
-                .call(drag()
-                .container(canvas.node())
-                .subject(dragsubject)
-                .on('start', dragstarted)
-                .on('drag', dragged)
-                .on('end', dragended));
-            function ticked() {
-                context.clearRect(0, 0, width, height);
-                // Draw links
-                context.beginPath();
-                links.forEach(drawLink);
-                context.strokeStyle = '#111';
-                context.stroke();
-                // Draw nodes
-                context.beginPath();
-                nodes.forEach(drawNode);
-                context.fillStyle = 'white';
-                context.fill();
-                context.strokeStyle = '#111';
-                context.stroke();
-                // Draw arrowheads
-                context.beginPath();
-                links.forEach(drawArrow);
-                context.fillStyle = '#111';
-                context.fill();
-                // Draw node labels
-                context.fillStyle = '#111';
-                context.font = '12px monospace';
-                context.textAlign = 'center';
-                context.textBaseline = 'middle';
-                nodes.forEach(drawLabel);
+        removeEventListener(type, listener) {
+            if (this._listeners === undefined)
+                return;
+            let listeners = this._listeners;
+            let listenerArray = listeners[type];
+            if (listenerArray !== undefined) {
+                let index = listenerArray.indexOf(listener);
+                if (index !== -1) {
+                    listenerArray.splice(index, 1);
+                }
             }
-            function dragsubject() {
-                return simulation$1.find(event.x, event.y);
-            }
-            function dragstarted() {
-                if (!event.active)
-                    simulation$1.alphaTarget(0.3).restart();
-                event.subject.fx = event.subject.x;
-                event.subject.fy = event.subject.y;
-            }
-            function dragged() {
-                event.subject.fx = event.x;
-                event.subject.fy = event.y;
-            }
-            function dragended() {
-                if (!event.active)
-                    simulation$1.alphaTarget(0);
-                event.subject.fx = null;
-                event.subject.fy = null;
-            }
-            function drawLink(d) {
-                context.moveTo(d.source.x, d.source.y);
-                context.lineTo(d.target.x, d.target.y);
-            }
-            const PI6 = Math.PI / 6;
-            function drawArrow(d) {
-                const angle = Math.atan2(d.target.y - d.source.y, d.target.x - d.source.x);
-                const x = d.target.x - radius * Math.cos(angle);
-                const y = d.target.y - radius * Math.sin(angle);
-                context.moveTo(x, y);
-                context.lineTo(x - 10 * Math.cos(angle - PI6), y - 10 * Math.sin(angle - PI6));
-                context.lineTo(x - 10 * Math.cos(angle + PI6), y - 10 * Math.sin(angle + PI6));
-                context.closePath();
-            }
-            function drawNode(d) {
-                context.moveTo(d.x + radius, d.y);
-                context.arc(d.x, d.y, radius, 0, 2 * Math.PI);
-            }
-            function drawLabel(d) {
-                context.moveTo(d.x, d.y);
-                context.fillText(d.id, d.x, d.y);
+        }
+        dispatchEvent(event) {
+            if (this._listeners === undefined)
+                return;
+            let listeners = this._listeners;
+            let listenerArray = listeners[event.type];
+            if (listenerArray !== undefined) {
+                event.target = this;
+                let array = listenerArray.slice(0);
+                for (let i = 0, l = array.length; i < l; i++) {
+                    array[i].call(this, event);
+                }
             }
         }
     }
 
-    class EvaluatorView extends View {
-        constructor(selection) {
-            super(selection);
+    class Evaluator extends EventDispatcher {
+        constructor(alloy) {
+            super();
             this._alloy = null;
-            this._input = null;
-            this._output = null;
-            this._stage = null;
-            this._active = null;
             this._nextid = 0;
-            this._expressions = [];
-            Split(['#eval-editor', '#eval-display'], {
-                sizes: [30, 70],
-                minSize: [300, 100],
-                gutterSize: 4
-            });
-            Split(['#eval-output', '#eval-console'], {
-                sizes: [75, 25],
-                direction: 'vertical',
-                gutterSize: 4
-            });
-            this._input = selection.select('#eval-input');
-            this._output = selection.select('#eval-output');
-            this._stage = new EvaluatorStage(selection.select('#eval-display'));
-            this._initialize_input();
+            this._pending = null;
+            this._alloy = alloy;
+            this._alloy.on_eval(this._parse.bind(this));
         }
-        set_alloy(alloy) {
-            if (alloy) {
-                this._alloy = alloy;
-                this._alloy.on_eval(this._parse_response.bind(this));
-            }
+        evaluate(expression) {
+            if (this._pending)
+                throw Error('Pending expression result');
+            const e = {
+                id: this._nextid++,
+                expression: expression,
+                result: this._alloy.connected() ? null : 'No Connection',
+                error: !this._alloy.connected(),
+                tuples: []
+            };
+            this._pending = e;
+            this._alloy.request_eval(e.id, e.expression);
         }
-        set_instance(instance) {
-            // TODO: parse instance for autocompletion data
-            this._clear();
+        setInstance(instance) {
+            instance
+                .fields()
+                .map(field => toExpression(this._nextid++, field))
+                .filter(expression => expression.tuples.length > 0)
+                .forEach(expression => this.dispatchEvent({
+                type: 'expression',
+                expression: expression
+            }));
         }
-        _add_error(message) {
-            this._expressions.push({
-                id: -1,
-                expression: 'ERROR',
-                result: message,
-                active: false,
-                error: true
-            });
-            this._update();
-        }
-        _clear() {
-            this._expressions = [];
-            this._active = null;
-            this._stage.clear();
-            this._update();
-        }
-        _disable() {
-            this._input.attr('disabled', '');
-        }
-        _enable() {
-            this._input.attr('disabled', null);
-        }
-        _evaluate() {
-            const input = this._input.property('value');
-            this._input.property('value', '');
-            const tmpres = this._alloy
-                ? 'Evaluating...'
-                : 'ERROR: No connection';
-            if (input.length) {
-                const expression = {
-                    id: this._nextid++,
-                    expression: input,
-                    result: tmpres,
-                    active: false,
-                    error: !this._alloy
-                };
-                this._expressions.push(expression);
-                this._update();
-                if (this._alloy) {
-                    this._alloy.request_eval(expression.id, expression.expression);
-                }
-            }
-            else {
-                this._enable();
-            }
-        }
-        _initialize_input() {
-            this._input.on('keydown', () => {
-                if (event.key === 'Enter') {
-                    event.preventDefault();
-                    this._disable();
-                    this._evaluate();
-                }
-            });
-        }
-        _on_hide() {
-        }
-        _on_show() {
-        }
-        _parse_response(result) {
-            const tokens = result.match(/EVL:(-?\d+):(.*)/);
+        _parse(response) {
+            const pending = this._pending;
+            this._pending = null;
+            const tokens = response.match(/EVL:(-?\d+):(.*)/);
             if (tokens === null) {
-                this._add_error(`Invalid response:\n${result}`);
+                pending.error = true;
+                pending.result = 'Invalid response';
+                return;
+            }
+            const id = parseInt(tokens[1]);
+            const result = tokens[2].trim();
+            if (id === -1) {
+                pending.error = true;
+                pending.result = result;
+                return;
+            }
+            if (id !== pending.id) {
+                pending.error = true;
+                pending.result = 'Response ID mismatch';
+            }
+            if (result.slice(0, 4) === 'ERR:') {
+                pending.result = result.slice(4);
+                pending.error = true;
+            }
+            else if (result === 'true' || result === 'false') {
+                pending.result = result === 'true';
+                pending.error = false;
+            }
+            else if (/^-?\d+$/.test(result)) {
+                pending.result = parseInt(result);
+                pending.error = false;
             }
             else {
-                const id = parseInt(tokens[1]);
-                const result = tokens[2];
-                if (id === -1) {
-                    this._add_error(result);
-                }
-                else {
-                    const expr = this._expressions.find(expr => expr.id === id);
-                    if (expr) {
-                        expr.result = result;
-                        this._parse_result(expr);
-                        this._set_active(expr);
-                    }
-                    else {
-                        this._add_error(`Unable to find expression ID: ${id}`);
-                    }
-                }
+                pending.result = result;
+                pending.error = false;
+                pending.tuples = toTuples(pending.expression, result);
             }
-            this._update();
-            this._enable();
+            this.dispatchEvent({
+                type: 'expression',
+                expression: pending
+            });
         }
-        _parse_result(expression) {
-            const result = expression.result;
-            if (result.slice(0, 4) === 'ERR:') {
-                expression.result = result.slice(4);
-                expression.error = true;
+    }
+    function toExpression(id, field) {
+        return {
+            id: id,
+            expression: field.id(),
+            result: null,
+            error: false,
+            tuples: field.tuples().map(tuple => {
+                const atoms = tuple.atoms();
+                return {
+                    source: atoms[0].id(),
+                    target: atoms[atoms.length - 1].id(),
+                    middle: atoms.slice(1, atoms.length - 1).map(atom => atom.id()),
+                    relation: field.id()
+                };
+            })
+        };
+    }
+    function toTuples(relation, result) {
+        const re = /\{(.*)\}/g;
+        if (re.test(result)) {
+            if (result === '{}')
+                return [];
+            if (!result.includes('->'))
+                return [];
+            const raw_tuples = result.slice(1, -1).split(',');
+            return raw_tuples
+                .map(tuple => tuple.split('->')
+                .map(atom => atom.trim()))
+                .map(atoms => {
+                const middle = atoms.slice(1, atoms.length - 1);
+                return {
+                    source: atoms[0],
+                    target: atoms[atoms.length - 1],
+                    middle: middle,
+                    relation: relation
+                };
+            });
+        }
+        return [];
+    }
+
+    class EvaluatorInput extends EventDispatcher {
+        constructor(selection) {
+            super();
+            this._curr = 0;
+            this._input = selection;
+            this._history = [];
+            selection.on('keydown', this._onKeyDown.bind(this));
+        }
+        enable(enable) {
+            this._input.attr('disabled', enable ? null : '');
+        }
+        _addToHistory(value) {
+            this._history.push(value);
+            this._curr = this._history.length;
+        }
+        _onDown() {
+            if (this._curr < this._history.length)
+                this._curr++;
+            this._showCurrentHistorySelection();
+        }
+        _onEnter(ctrlKey) {
+            const value = this._input.property('value');
+            this._input.property('value', '');
+            this._addToHistory(value);
+            this.dispatchEvent({
+                type: 'evaluate',
+                text: value,
+                ctrlKey: ctrlKey
+            });
+        }
+        _onUp() {
+            if (this._curr > 0)
+                this._curr--;
+            this._showCurrentHistorySelection();
+        }
+        _showCurrentHistorySelection() {
+            if (this._curr < this._history.length)
+                this._input.property('value', this._history[this._curr]);
+            else
+                this._input.property('value', '');
+        }
+        _onKeyDown() {
+            const key = event.key;
+            if (key === 'Enter') {
+                event.preventDefault();
+                this._onEnter(event.ctrlKey);
+            }
+            else if (key === 'ArrowUp') {
+                event.preventDefault();
+                this._onUp();
+            }
+            else if (key === 'ArrowDown') {
+                event.preventDefault();
+                this._onDown();
+            }
+        }
+    }
+
+    class EvaluatorOutput {
+        constructor(selection) {
+            this._output = selection;
+        }
+        deactivateAll() {
+            this._output
+                .selectAll('div.output')
+                .classed('active', false);
+        }
+        expressions(expressions) {
+            const selection = this._output
+                .selectAll('div.output')
+                .data(expressions, d => d.id)
+                .join(enter => {
+                const div = enter
+                    .append('div')
+                    .attr('class', 'output active');
+                div.append('div').attr('class', 'expression');
+                div.append('div').attr('class', 'result');
+                return div;
+            });
+            selection
+                .selectAll('div.expression')
+                .each(renderExpression);
+            selection
+                .selectAll('div.result')
+                .each(renderResult);
+            this._scroll_down();
+            function renderExpression(expression) {
+                select(this)
+                    .text(expression.expression);
+            }
+            function renderResult(expression) {
+                select(this)
+                    .classed('error', expression.error)
+                    .classed('expanded', true)
+                    .text(expression.result);
             }
         }
         _scroll_down() {
             this._output
                 .property('scrollTop', this._output.property('scrollHeight'));
         }
-        _set_active(expression) {
-            this._active = expression;
-            this._expressions.forEach(expr => {
-                expr.active = expr === expression;
+    }
+
+    class EvaluatorStyling {
+        constructor(selection) {
+            this._styling = selection;
+            // LOCKING
+            this._styling.append('button')
+                .text('Lock all nodes')
+                .on('click', () => {
+                if (this._stage)
+                    this._stage.lockAllNodes();
             });
-            this._stage.render(expression);
+            this._styling.append('button')
+                .text('Unlock all nodes')
+                .on('click', () => {
+                if (this._stage)
+                    this._stage.unlockAllNodes();
+            });
+            // DISCONNECTED NODES
+            const disconnectedNodes = this._styling.append('div');
+            this._disconnectedNodes = disconnectedNodes.append('input')
+                .attr('type', 'checkbox')
+                .attr('id', 'disconnectedNodes')
+                .on('change', () => {
+                if (this._stage)
+                    this._stage.toggleDisconnected();
+                this._update();
+            });
+            disconnectedNodes.append('label')
+                .attr('for', 'disconnectedNodes')
+                .text('Show disconnected nodes');
+            // COMBINED EDGES
+            const combineEdges = this._styling.append('div');
+            this._combineEdges = combineEdges.append('input')
+                .attr('type', 'checkbox')
+                .attr('id', 'combineEdges')
+                .on('change', () => {
+                if (this._stage)
+                    this._stage.toggleCombineEdges();
+                this._update();
+            });
+            combineEdges.append('label')
+                .attr('for', 'combineEdges')
+                .text('Combine Edges');
+            // SHOW EDGE LABELS
+            const showEdgeLabels = this._styling.append('div');
+            this._showEdgeLabels = showEdgeLabels.append('input')
+                .attr('type', 'checkbox')
+                .attr('id', 'showEdgeLabels')
+                .on('change', () => {
+                if (this._stage)
+                    this._stage.toggleEdgeLabels();
+                this._update();
+            });
+            showEdgeLabels.append('label')
+                .attr('for', 'showEdgeLabels')
+                .text('Show edge labels');
+            // SHOW MIDDLES
+            const showMiddles = this._styling.append('div');
+            this._showMiddles = showMiddles.append('input')
+                .attr('type', 'checkbox')
+                .attr('id', 'showMiddles')
+                .on('change', () => {
+                if (this._stage)
+                    this._stage.toggleShowMiddles();
+                this._update();
+            });
+            showMiddles.append('label')
+                .attr('for', 'showMiddles')
+                .text('Show skipped atoms in edge labels');
+            // CIRCLE RADIUS
+            const radius = this._styling.append('div');
+            this._radius = radius.append('input')
+                .attr('type', 'number')
+                .attr('id', 'radius')
+                .attr('min', 1)
+                .attr('max', 150)
+                .on('change', () => {
+                const radius = parseInt(this._radius.property('value'));
+                if (this._stage)
+                    this._stage.setRadius(radius);
+                this._update();
+            });
+            radius.append('label')
+                .attr('for', 'radius')
+                .text('Circle radius');
+            // NODE FONT SIZE
+            const nodefont = this._styling.append('div');
+            this._nodeFontSize = nodefont.append('input')
+                .attr('type', 'number')
+                .attr('id', 'node-font')
+                .attr('min', 1)
+                .attr('max', 72)
+                .on('change', () => {
+                const size = parseInt(this._nodeFontSize.property('value'));
+                if (this._stage)
+                    this._stage.setNodeFontSize(size);
+                this._update();
+            });
+            nodefont.append('label')
+                .attr('for', 'node-font')
+                .text('Node font size');
+            // EDGE FONT SIZE
+            const edgefont = this._styling.append('div');
+            this._edgeFontSize = edgefont.append('input')
+                .attr('type', 'number')
+                .attr('id', 'node-font')
+                .attr('min', 1)
+                .attr('max', 72)
+                .on('change', () => {
+                const size = parseInt(this._edgeFontSize.property('value'));
+                if (this._stage)
+                    this._stage.setEdgeFontSize(size);
+                this._update();
+            });
+            edgefont.append('label')
+                .attr('for', 'node-font')
+                .text('Edge font size');
+            // TARGET EDGE LENGTH
+            const edgeLength = this._styling.append('div');
+            this._edgeLength = edgeLength.append('input')
+                .attr('type', 'number')
+                .attr('id', 'edge-length')
+                .attr('min', 1)
+                .attr('max', 1000)
+                .on('change', () => {
+                const size = parseInt(this._edgeLength.property('value'));
+                if (this._stage)
+                    this._stage.setTargetEdgeLength(size);
+                this._update();
+            });
+            edgeLength.append('label')
+                .attr('for', 'edge-length')
+                .text('Target edge length');
+            // SIGNATURE COLORS
+            this._sigColors = this._styling.append('div').attr('class', 'sigColors');
+            this._updateSigColors();
+        }
+        setStage(stage) {
+            this._stage = stage;
+            stage.addEventListener('colors', this._update.bind(this));
+            this._update();
+        }
+        setVisible(visible) {
+            this._styling.style('display', visible ? null : 'none');
         }
         _update() {
-            const selection = this._output.selectAll('div.output')
-                .data(this._expressions, d => d.id)
+            this._disconnectedNodes.property('checked', this._stage._showDisconnected);
+            this._combineEdges.property('checked', this._stage._combineEdges);
+            this._showEdgeLabels.property('checked', this._stage._showEdgeLabels);
+            this._showMiddles.property('checked', this._stage._showMiddles);
+            this._radius.property('value', this._stage._radius);
+            this._nodeFontSize.property('value', this._stage._nodeFontSize);
+            this._edgeFontSize.property('value', this._stage._edgeFontSize);
+            this._edgeLength.property('value', this._stage._forceLink.distance());
+            this._updateSigColors();
+        }
+        _updateSigColors() {
+            if (this._stage) {
+                const strokes = this._stage._sigStrokes;
+                const fills = this._stage._sigFills;
+                const sigs = Array.from(strokes.keys()).map(sig => {
+                    return {
+                        sig: sig,
+                        stroke: strokes.get(sig),
+                        fill: fills.get(sig)
+                    };
+                });
+                const parents = this._sigColors.selectAll('div.sigColor')
+                    .data(sigs)
+                    .join('div')
+                    .attr('class', 'sigColor');
+                parents.selectAll('div.title')
+                    .data(d => [d])
+                    .join('div')
+                    .attr('class', 'title')
+                    .text(d => d.sig);
+                const pickers = parents.selectAll('div.picker')
+                    .data(d => [{
+                        type: 'Stroke',
+                        color: d.stroke,
+                        sig: d.sig
+                    }, {
+                        type: 'Fill',
+                        color: d.fill,
+                        sig: d.sig
+                    }])
+                    .join('div')
+                    .attr('class', 'picker');
+                pickers.selectAll('*').remove();
+                pickers.append('input')
+                    .property('type', 'color')
+                    .property('value', d => d.color)
+                    .attr('id', d => d.type + d.sig)
+                    .on('change', (d, i, g) => {
+                    const picker = select(g[i]);
+                    if (this._stage) {
+                        if (d.type === 'Stroke') {
+                            this._stage.setStrokeColor(d.sig, picker.property('value'));
+                        }
+                        if (d.type === 'Fill') {
+                            this._stage.setFillColor(d.sig, picker.property('value'));
+                        }
+                    }
+                });
+                pickers.append('label')
+                    .attr('for', d => d.type + d.sig)
+                    .text(d => d.type);
+            }
+        }
+    }
+
+    class ExpressionsList extends EventDispatcher {
+        constructor(selection) {
+            super();
+            this._expressionsList = selection;
+            this._expressionsSet = new Set();
+        }
+        setExpressions(expressions) {
+            this._expressionsList
+                .selectAll('div')
+                .data(expressions)
                 .join('div')
-                .attr('class', 'output')
-                .classed('active', d => d.active);
-            selection.selectAll('div')
-                .data(d => [d, d])
-                .join('div')
-                .attr('class', (d, i) => {
-                return i === 0
-                    ? 'expression'
-                    : 'result';
-            })
-                .classed('error', (d, i) => {
-                return i === 1 && d.error;
-            })
-                .text((d, i) => {
-                return i === 0
-                    ? d.expression
-                    : d.result;
+                .attr('class', 'expression')
+                .text(expr => expr)
+                .on('click', d => {
+                this.dispatchEvent({
+                    type: 'toggle',
+                    expression: d
+                });
             });
-            this._scroll_down();
+        }
+        setGraphedExpressions(expressions) {
+            this._expressionsList
+                .selectAll('div')
+                .classed('graphed', expr => expressions.includes(expr));
+        }
+        setVisible(visible) {
+            this._expressionsList.style('display', visible ? null : 'none');
+        }
+    }
+
+    class EvaluatorSettings extends EventDispatcher {
+        constructor(selection) {
+            super();
+            this._expressions = new ExpressionsList(selection.select('#eval-expressions'));
+            this._expressionsTab = selection.select('#expressions-button');
+            this._styling = new EvaluatorStyling(selection.select('#eval-styles'));
+            this._stylingTab = selection.select('#styling-button');
+            this._expressions.addEventListener('toggle', event => this.dispatchEvent(event));
+            this._expressionsTab.on('click', this.showExpressions.bind(this));
+            this._stylingTab.on('click', this.showStyles.bind(this));
+            this.showExpressions();
+        }
+        setExpressions(expressions) {
+            this._expressions.setExpressions(expressions);
+        }
+        setGraphedExpressions(expressions) {
+            this._expressions.setGraphedExpressions(expressions);
+        }
+        setStage(stage) {
+            this._styling.setStage(stage);
+        }
+        showExpressions() {
+            this._stylingTab.classed('active', false);
+            this._expressionsTab.classed('active', true);
+            this._styling.setVisible(false);
+            this._expressions.setVisible(true);
+        }
+        showStyles() {
+            this._stylingTab.classed('active', true);
+            this._expressionsTab.classed('active', false);
+            this._styling.setVisible(true);
+            this._expressions.setVisible(false);
+        }
+    }
+
+    class EvaluatorStageNew extends EventDispatcher {
+        constructor(selection) {
+            super();
+            this._stage = null;
+            this._canvas = null;
+            this._context = null;
+            this._width = 0;
+            this._height = 0;
+            this._simulation = simulation();
+            this._forceLink = link().id(d => d.id);
+            this._forceCenter = center();
+            this._forceCharge = manyBody();
+            this._radius = 30;
+            this._nodeFontSize = 12;
+            this._edgeFontSize = 12;
+            this._defaultFill = '#ffffff';
+            this._defaultStroke = '#111111';
+            this._combineEdges = false;
+            this._showMiddles = true;
+            this._showEdgeLabels = true;
+            this._showDisconnected = true;
+            this._expressions = [];
+            this._links = [];
+            this._nodes = []; // all nodes
+            this._disconnected = []; // nodes not part of simulation
+            this._connected = []; // nodes part of simulation
+            this._sigFills = new Map();
+            this._sigStrokes = new Map();
+            this._stage = selection;
+            this._canvas = selection.append('canvas');
+            this._context = this._canvas.node().getContext('2d');
+            this._simulation
+                .force('link', this._forceLink)
+                .force('center', this._forceCenter)
+                .force('charge', this._forceCharge)
+                .on('tick', this._repaint.bind(this));
+            this._canvas.call(drag()
+                .container(this._canvas.node())
+                .subject(this._dragSubject.bind(this))
+                .on('start', this._dragStarted.bind(this))
+                .on('drag', this._dragged.bind(this))
+                .on('end', this._dragEnded.bind(this)));
+            this._canvas
+                .on('click', this._onClick.bind(this))
+                .on('dblclick', this._onDblClick.bind(this));
+            this.resize();
+            this._forceLink.distance(6 * this._radius);
+            this._forceCenter.x(this._width / 2).y(this._height / 2);
+            this._forceCharge.strength(-100);
+        }
+        resize() {
+            const styles = getComputedStyle(this._stage.node());
+            this._width = parseInt(styles.getPropertyValue('width'));
+            this._height = parseInt(styles.getPropertyValue('height'));
+            this._canvas.attr('width', this._width);
+            this._canvas.attr('height', this._height);
+            this._forceCenter.x(this._width / 2).y(this._height / 2);
+            this.setExpressions(this._expressions);
+        }
+        lockAllNodes() {
+            this._connected.filter(node => !node.fixed).forEach(toggleFixed);
+            this._repaint();
+        }
+        toggleCombineEdges() {
+            this._combineEdges = !this._combineEdges;
+            this.setExpressions(this._expressions);
+        }
+        toggleDisconnected() {
+            this._showDisconnected = !this._showDisconnected;
+            this._repaint();
+        }
+        toggleEdgeLabels() {
+            this._showEdgeLabels = !this._showEdgeLabels;
+            this._repaint();
+        }
+        toggleShowMiddles() {
+            this._showMiddles = !this._showMiddles;
+            this.setExpressions(this._expressions);
+        }
+        setEdgeFontSize(size) {
+            this._edgeFontSize = size;
+            this._repaint();
+        }
+        setExpressions(expressions) {
+            // const previouslyConnected = this._resetTuples();
+            this._expressions = expressions;
+            // this._calculateLinks(expressions, previouslyConnected);
+            this._calculateLinks();
+            arrange_rows(this._disconnected, this._width, this._height, this._radius);
+            this._simulation.nodes(this._connected);
+            this._forceLink.links(this._links);
+            this._simulation.alpha(0.3).restart();
+        }
+        setFillColor(sig, color) {
+            this._sigFills.set(sig, color);
+            this._calculateNodeColors();
+            this._repaint();
+        }
+        setNodeFontSize(size) {
+            this._nodeFontSize = size;
+            this._repaint();
+        }
+        setNodes(nodes) {
+            // Assign a color to each signature
+            const sigset = new Set();
+            nodes.forEach(node => node.sigs.forEach(sig => sigset.add(sig)));
+            this._setSignatures(Array.from(sigset));
+            // Save nodes
+            this._nodes = nodes;
+            this._resetTuples();
+            // Arrange static nodes
+            arrange_rows(this._disconnected, this._width, this._height, this._radius);
+            // Assign colors to nodes
+            this._calculateNodeColors();
+            // Restart simulation
+            this._forceLink.links([]);
+            this._simulation.nodes(this._connected);
+        }
+        setRadius(radius) {
+            this._radius = radius;
+            this._repaint();
+        }
+        setStrokeColor(sig, color) {
+            this._sigStrokes.set(sig, color);
+            this._calculateNodeColors();
+            this._repaint();
+        }
+        setTargetEdgeLength(length) {
+            this._forceLink.distance(length);
+            this._simulation.alpha(0.3).restart();
+        }
+        unlockAllNodes() {
+            this._connected.filter(node => node.fixed).forEach(toggleFixed);
+            this._simulation.alpha(0.3).restart();
+            this._repaint();
+        }
+        _calculateLinks() {
+            const expressions = this._expressions;
+            const links = [];
+            const connectedSet = new Set();
+            expressions.forEach(expression => {
+                expression.tuples.forEach(tuple => {
+                    const source = this._nodes.find(node => node.id === tuple.source);
+                    const target = this._nodes.find(node => node.id === tuple.target);
+                    const label = this._tupleLabel(tuple);
+                    // Check that source and target are valid nodes
+                    if (!source)
+                        throw Error(`Tuple source node is not valid: ${tuple.source}`);
+                    if (!target)
+                        throw Error(`Tuple target node is not valid: ${tuple.target}`);
+                    // Make the link
+                    if (this._combineEdges) {
+                        // If the link for this tuple exists already, add to its label,
+                        // otherwise create a new link.
+                        const existing = links.find(link => link.source === source && link.target === target);
+                        if (existing) {
+                            if (!existing.labels.includes(label))
+                                existing.labels.push(label);
+                        }
+                        else {
+                            links.push({
+                                source: source,
+                                target: target,
+                                labels: [label]
+                            });
+                        }
+                    }
+                    else {
+                        links.push({
+                            source: source,
+                            target: target,
+                            labels: [label]
+                        });
+                    }
+                    // Add nodes to set of connected nodes
+                    connectedSet.add(source);
+                    connectedSet.add(target);
+                });
+            });
+            this._links = links;
+            this._connected = [];
+            this._disconnected = [];
+            this._nodes.forEach(node => {
+                if (connectedSet.has(node))
+                    this._connected.push(node);
+                else
+                    this._disconnected.push(node);
+            });
+            this._disconnected.forEach(node => {
+                node.fixed = false;
+                node.fx = null;
+                node.fy = null;
+            });
+        }
+        _calculateNodeColors() {
+            this._nodes.forEach(node => {
+                const nsigs = node.sigs.length;
+                if (nsigs < 1) {
+                    node.stroke = this._defaultStroke;
+                    node.fill = this._defaultFill;
+                }
+                else {
+                    const lowest = node.sigs[nsigs - 1];
+                    node.stroke = this._sigStrokes.get(lowest);
+                    node.fill = this._sigFills.get(lowest);
+                }
+            });
+            this.dispatchEvent({
+                type: 'colors'
+            });
+        }
+        _dragSubject() {
+            return this._simulation.find(event.x, event.y, this._radius);
+        }
+        _dragStarted() {
+            if (!event.active)
+                this._simulation.alphaTarget(0.3).restart();
+            event.subject.fx = event.subject.x;
+            event.subject.fy = event.subject.y;
+        }
+        _dragged() {
+            event.subject.fx = event.x;
+            event.subject.fy = event.y;
+        }
+        _dragEnded() {
+            if (!event.active)
+                this._simulation.alphaTarget(0);
+            if (!event.subject.fixed)
+                event.subject.fx = null;
+            if (!event.subject.fixed)
+                event.subject.fy = null;
+        }
+        _onClick() {
+            if (event.ctrlKey) {
+                const [x, y] = mouse(this._canvas.node());
+                const node = this._simulation.find(x, y, this._radius);
+                if (node)
+                    toggleFixed(node);
+            }
+        }
+        _onDblClick() {
+            const [x, y] = mouse(this._canvas.node());
+            const node = this._simulation.find(x, y, this._radius);
+            if (node)
+                toggleFixed(node);
+        }
+        _resetTuples() {
+            const previouslyConnected = this._connected.map(node => node.id);
+            this._links = [];
+            this._connected = [];
+            this._disconnected = this._nodes.slice().sort((a, b) => alphaSort(a.id, b.id));
+            return previouslyConnected;
+        }
+        _repaint() {
+            const context = this._context;
+            const radius = this._radius;
+            // Clear the context
+            context.clearRect(0, 0, this._width, this._height);
+            // Draw links
+            context.beginPath();
+            this._links.forEach(tuple => drawLink(context, tuple));
+            context.lineWidth = 1;
+            context.strokeStyle = '#111';
+            context.stroke();
+            // Draw link labels
+            if (this._showEdgeLabels) {
+                context.fillStyle = '#111';
+                context.font = `${this._edgeFontSize}px monospace`;
+                context.textAlign = 'center';
+                context.textBaseline = 'middle';
+                this._links.forEach(tuple => drawLinkLabel(context, tuple));
+            }
+            // Draw arrowheads
+            context.beginPath();
+            this._links.forEach(tuple => drawArrow(context, tuple, radius));
+            context.lineWidth = 1;
+            context.fillStyle = '#111';
+            context.fill();
+            // Draw nodes
+            if (this._showDisconnected) {
+                this._nodes.forEach(node => drawNode(context, node, radius));
+            }
+            else {
+                this._connected.forEach(node => drawNode(context, node, radius));
+            }
+            // Draw node labels
+            context.fillStyle = '#111';
+            context.font = `${this._nodeFontSize}px monospace`;
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.lineWidth = 1;
+            if (this._showDisconnected) {
+                this._nodes.forEach(node => drawNodeLabel(context, node));
+            }
+            else {
+                this._connected.forEach(node => drawNodeLabel(context, node));
+            }
+        }
+        _setSignatures(signatures) {
+            const oldFills = this._sigFills;
+            const oldStrokes = this._sigStrokes;
+            this._sigFills = new Map();
+            this._sigStrokes = new Map();
+            oldFills.forEach((color, sig) => {
+                this._sigFills.set(sig, color);
+            });
+            oldStrokes.forEach((color, sig) => {
+                this._sigStrokes.set(sig, color);
+            });
+            signatures.forEach(sig => {
+                if (!this._sigFills.has(sig)) {
+                    this._sigFills.set(sig, this._defaultFill);
+                }
+                if (!this._sigStrokes.has(sig)) {
+                    this._sigStrokes.set(sig, this._defaultStroke);
+                }
+            });
+        }
+        _tupleLabel(tuple) {
+            return this._showMiddles
+                ? tuple.relation + (tuple.middle.length ? `[${tuple.middle.join(',')}]` : '')
+                : tuple.relation;
+        }
+    }
+    function alphaSort(a, b) {
+        let nameA = a.toUpperCase();
+        let nameB = b.toUpperCase();
+        if (nameA < nameB) {
+            return -1;
+        }
+        if (nameA > nameB) {
+            return 1;
+        }
+        return 0;
+    }
+    function arrange_rows(nodes, width, height, radius) {
+        const padding = radius / 2;
+        let x = radius + padding, y = radius + padding;
+        nodes.forEach(node => {
+            node.x = x;
+            node.y = y;
+            x += 2 * radius + padding;
+            if (x > width - padding - radius) {
+                x = radius + padding;
+                y += 2 * radius + padding;
+            }
+        });
+    }
+    const TWOPI = 2 * Math.PI;
+    const PI6 = Math.PI / 6;
+    function drawArrow(context, link, radius) {
+        const ng = Math.atan2(link.target.y - link.source.y, link.target.x - link.source.x);
+        const x = link.target.x - radius * Math.cos(ng);
+        const y = link.target.y - radius * Math.sin(ng);
+        context.moveTo(x, y);
+        context.lineTo(x - 10 * Math.cos(ng - PI6), y - 10 * Math.sin(ng - PI6));
+        context.lineTo(x - 10 * Math.cos(ng + PI6), y - 10 * Math.sin(ng + PI6));
+        context.closePath();
+    }
+    function drawLinkLabel(context, link) {
+        const x = (link.source.x + link.target.x) / 2;
+        const y = (link.source.y + link.target.y) / 2;
+        context.moveTo(x, y);
+        context.fillText(link.labels.join(', '), x, y);
+    }
+    function drawNodeLabel(context, node) {
+        context.moveTo(node.x, node.y);
+        context.fillText(node.id, node.x, node.y);
+    }
+    function drawLink(context, link) {
+        context.moveTo(link.source.x, link.source.y);
+        context.lineTo(link.target.x, link.target.y);
+    }
+    function drawNode(context, node, radius) {
+        context.beginPath();
+        context.lineWidth = node.fixed ? 3 : 1;
+        context.strokeStyle = node.stroke;
+        context.fillStyle = node.fill;
+        context.moveTo(node.x + radius, node.y);
+        context.arc(node.x, node.y, radius, 0, TWOPI);
+        context.fill();
+        context.stroke();
+    }
+    function toggleFixed(node) {
+        if (node.fixed) {
+            node.fixed = false;
+            node.fx = null;
+            node.fy = null;
+        }
+        else {
+            node.fixed = true;
+            node.fx = node.x;
+            node.fy = node.y;
+        }
+    }
+
+    class EvaluatorViewNew extends View {
+        constructor(selection, alloy) {
+            super(selection);
+            this._expressions = new Map();
+            this._expressionList = [];
+            this._graphedExpressions = new Map();
+            this._graphNextExpression = false;
+            Split(['#eval-editor', '#eval-display', '#eval-settings'], {
+                sizes: [20, 60, 20],
+                minSize: [200, 100, 200],
+                gutterSize: 4,
+                onDragEnd: () => { this._stage.resize(); }
+            });
+            Split(['#eval-output', '#eval-console'], {
+                sizes: [75, 25],
+                direction: 'vertical',
+                gutterSize: 4
+            });
+            this._evaluator = new Evaluator(alloy);
+            this._input = new EvaluatorInput(selection.select('#eval-input'));
+            this._output = new EvaluatorOutput(selection.select('#eval-output'));
+            this._stage = new EvaluatorStageNew(selection.select('#eval-display'));
+            this._settings = new EvaluatorSettings(selection.select('#eval-settings'));
+            this._settings.setStage(this._stage);
+            this._input.addEventListener('evaluate', event => {
+                this._evaluator.evaluate(event.text);
+                this._graphNextExpression = event.ctrlKey;
+            });
+            this._evaluator.addEventListener('expression', event => {
+                this._addExpression(event.expression);
+            });
+            this._settings.addEventListener('toggle', event => {
+                const expression = event.expression;
+                if (this._graphedExpressions.has(expression)) {
+                    this._graphedExpressions.delete(expression);
+                }
+                else {
+                    const expr = this._expressions.get(expression);
+                    this._graphedExpressions.set(expression, expr);
+                }
+                this._updateGraphedExpressions();
+            });
+        }
+        set_instance(instance) {
+            const nodes = instance.atoms().map(atom => ({
+                id: atom.id(),
+                sigs: atom.signature().types().map(type => type.id())
+            }));
+            // Clear graphable expressions
+            this._expressions = new Map();
+            this._graphedExpressions = new Map();
+            this._updateGraphedExpressions();
+            // Set nodes and have evaluator extract relations from instance
+            this._stage.setNodes(nodes);
+            this._evaluator.setInstance(instance);
+            // Make all previous expressions inactive
+            this._output.deactivateAll();
+        }
+        _on_hide() {
+        }
+        _on_show() {
+        }
+        _addExpression(expression) {
+            this._expressions.set(expression.expression, expression);
+            this._expressionList.push(expression);
+            this._output.expressions(this._expressionList.filter(expr => expr.result !== null));
+            // Get expressions that have tuples
+            const withTuples = Array.from(this._expressions.values())
+                .filter(expr => expr.tuples.length)
+                .map(expr => expr.expression);
+            if (this._graphNextExpression) {
+                this._graphedExpressions.set(expression.expression, expression);
+                this._graphNextExpression = false;
+            }
+            this._settings.setExpressions(withTuples);
+            this._updateGraphedExpressions();
+        }
+        _updateGraphedExpressions() {
+            this._stage.setExpressions(Array.from(this._graphedExpressions.values()));
+            this._settings.setGraphedExpressions(Array.from(this._graphedExpressions.keys()));
         }
     }
 
@@ -10492,25 +11227,27 @@
         }
         _make_voronoi() {
             let points = this._edge.points();
-            let delaunay = Delaunay
-                .from(points, d => d.x, d => d.y)
-                .voronoi(_padded_bbox(points, 20));
-            let paths = Array.from(delaunay.cellPolygons());
-            this._delaunaygroup
-                .attr('fill', 'transparent')
-                .attr('stroke', 'none')
-                .selectAll('path')
-                .data(paths)
-                .join('path')
-                .attr('d', line())
-                .on('mouseover', (d, i) => {
-                this._edge.highlight(points[i].element);
-            })
-                .on('mouseout', () => {
-                this._edge.highlight(null);
-            });
-            this._delaunaygroup
-                .raise();
+            if (points.length > 0) {
+                let delaunay = Delaunay
+                    .from(points, d => d.x, d => d.y)
+                    .voronoi(_padded_bbox(points, 20));
+                let paths = Array.from(delaunay.cellPolygons());
+                this._delaunaygroup
+                    .attr('fill', 'transparent')
+                    .attr('stroke', 'none')
+                    .selectAll('path')
+                    .data(paths)
+                    .join('path')
+                    .attr('d', line())
+                    .on('mouseover', (d, i) => {
+                    this._edge.highlight(points[i].element);
+                })
+                    .on('mouseout', () => {
+                    this._edge.highlight(null);
+                });
+                this._delaunaygroup
+                    .raise();
+            }
         }
     }
     function _edge_label(edge) {
@@ -10591,8 +11328,8 @@
                 });
                 return {
                     data: tuple,
-                    source: atoms.length ? atoms[0] : null,
-                    target: atoms.length ? atoms[atoms.length - 1] : null,
+                    source: atoms.length >= 2 ? atoms[0] : null,
+                    target: atoms.length >= 2 ? atoms[atoms.length - 1] : null,
                     middle: atoms.length > 2 ? atoms.slice(1, atoms.length - 1) : []
                 };
             })
@@ -10624,15 +11361,15 @@
                         });
                     }
                     // (Optionally) Remove atoms that are not part of a relation
-                    if (this._disconnected && node.children) {
-                        node.children = node.children.filter(child => {
-                            // If a child node is a signature, we always want to
-                            // include it.  If not, it is an atom and we only want
-                            // to include it if it is visible as part of an edge
-                            return child.data.expressionType() === 'signature'
-                                || visibleset.has(child.data.id());
-                        });
-                    }
+                    // if (this._disconnected && node.children) {
+                    //     node.children = node.children.filter(child => {
+                    //         // If a child node is a signature, we always want to
+                    //         // include it.  If not, it is an atom and we only want
+                    //         // to include it if it is visible as part of an edge
+                    //         return child.data.expressionType() === 'signature'
+                    //             || visibleset.has(child.data.id());
+                    //     });
+                    // }
                     // Remove atoms that are part of a projected signature
                     if (node.children) {
                         let sigs = Array.from(this._projections.keys());
@@ -11016,6 +11753,143 @@
             this._is_visible = false;
         }
     }
+
+    class SourceView extends View {
+        constructor(selection) {
+            super(selection);
+            this._tree = selection.select('.filetree');
+            this._view = selection.select('.fileview');
+            this._gutter = this._view.select('.gutter');
+            this._editor = this._view.select('.editor');
+            this._message = this._editor
+                .append('div')
+                .attr('class', 'message');
+            this._code = this._editor
+                .append('pre')
+                .append('code')
+                .attr('class', 'alloy');
+            this._show_message('No files loaded.');
+        }
+        make_active(file) {
+            if (file) {
+                // Set the tree item to active
+                this._tree
+                    .selectAll('.file')
+                    .classed('active', d => d === file);
+                // Set the editor text
+                this._code
+                    .html(file.text);
+                // Highlight the code
+                hljs.highlightBlock(this._code.node());
+                // Update line numbers
+                this._update_line_numbers(file);
+            }
+            else {
+                this._code.text('Open a file.');
+            }
+        }
+        set_files(files) {
+            this._set_tree_data(files);
+            this._show_code();
+        }
+        _on_show() {
+        }
+        _on_hide() {
+        }
+        _set_tree_data(files) {
+            let fs = this._tree
+                .selectAll('.file')
+                .data(files, d => d.filename);
+            // Remove old files
+            fs.exit().remove();
+            // Add new files
+            let enter = fs.enter()
+                .append('div')
+                .attr('class', 'file')
+                .on('click', d => this.make_active(d));
+            // Add icon to new file
+            enter.append('div')
+                .attr('class', 'icon')
+                .append('i')
+                .attr('class', 'fas fa-file');
+            // Add filename to new file
+            enter.append('div')
+                .attr('class', 'filename')
+                .attr('id', d => d.filename)
+                .text(d => d.filename);
+            // Set the active file
+            let active = this._tree
+                .select('.active')
+                .data();
+            if (active.length) {
+                this.make_active(active[0]);
+            }
+            else if (files.length) {
+                this.make_active(files[0]);
+            }
+            else {
+                this.make_active(null);
+            }
+        }
+        _show_code() {
+            this._message
+                .style('display', 'none');
+            this._code
+                .style('display', null);
+        }
+        _show_message(message) {
+            this._message
+                .style('display', null)
+                .text(message);
+            this._code
+                .style('display', 'none');
+        }
+        _update_line_numbers(file) {
+            let lines = file.text.match(/\r?\n/g);
+            let numlines = lines ? lines.length + 1 : 2;
+            let selection = this._gutter
+                .selectAll('pre')
+                .data(sequence(numlines));
+            selection
+                .exit()
+                .remove();
+            selection
+                .enter()
+                .append('pre')
+                .attr('class', 'line-number')
+                .append('code')
+                .append('span')
+                .attr('class', 'hljs-comment')
+                .html(d => d + 1);
+        }
+    }
+    hljs.registerLanguage('alloy', function () {
+        let NUMBER_RE = '\\b\\d+';
+        return {
+            // case_insensitive
+            case_insensitive: false,
+            // keywords
+            keywords: 'abstract all and as assert but check disj ' +
+                'else exactly extends fact for fun iden iff implies ' +
+                'in Int let lone module no none not one open or pred ' +
+                'run set sig some sum univ',
+            // contains
+            contains: [
+                // hljs.COMMENT
+                hljs.COMMENT('//', '$'),
+                hljs.COMMENT('--', '$'),
+                hljs.COMMENT('/\\*', '\\*/'),
+                {
+                    // className
+                    className: 'number',
+                    // begin
+                    begin: NUMBER_RE,
+                    // relevance
+                    relevance: 0
+                }
+            ]
+        };
+    });
 
     class TableLayoutPreferences {
         constructor() {
@@ -11757,143 +12631,6 @@
         }
     }
 
-    class SourceView extends View {
-        constructor(selection) {
-            super(selection);
-            this._tree = selection.select('.filetree');
-            this._view = selection.select('.fileview');
-            this._gutter = this._view.select('.gutter');
-            this._editor = this._view.select('.editor');
-            this._message = this._editor
-                .append('div')
-                .attr('class', 'message');
-            this._code = this._editor
-                .append('pre')
-                .append('code')
-                .attr('class', 'alloy');
-            this._show_message('No files loaded.');
-        }
-        make_active(file) {
-            if (file) {
-                // Set the tree item to active
-                this._tree
-                    .selectAll('.file')
-                    .classed('active', d => d === file);
-                // Set the editor text
-                this._code
-                    .text(file.text);
-                // Highlight the code
-                hljs.highlightBlock(this._code.node());
-                // Update line numbers
-                this._update_line_numbers(file);
-            }
-            else {
-                this._code.text('Open a file.');
-            }
-        }
-        set_files(files) {
-            this._set_tree_data(files);
-            this._show_code();
-        }
-        _on_show() {
-        }
-        _on_hide() {
-        }
-        _set_tree_data(files) {
-            let fs = this._tree
-                .selectAll('.file')
-                .data(files, d => d.filename);
-            // Remove old files
-            fs.exit().remove();
-            // Add new files
-            let enter = fs.enter()
-                .append('div')
-                .attr('class', 'file')
-                .on('click', d => this.make_active(d));
-            // Add icon to new file
-            enter.append('div')
-                .attr('class', 'icon')
-                .append('i')
-                .attr('class', 'fas fa-file');
-            // Add filename to new file
-            enter.append('div')
-                .attr('class', 'filename')
-                .attr('id', d => d.filename)
-                .text(d => d.filename);
-            // Set the active file
-            let active = this._tree
-                .select('.active')
-                .data();
-            if (active.length) {
-                this.make_active(active[0]);
-            }
-            else if (files.length) {
-                this.make_active(files[0]);
-            }
-            else {
-                this.make_active(null);
-            }
-        }
-        _show_code() {
-            this._message
-                .style('display', 'none');
-            this._code
-                .style('display', null);
-        }
-        _show_message(message) {
-            this._message
-                .style('display', null)
-                .text(message);
-            this._code
-                .style('display', 'none');
-        }
-        _update_line_numbers(file) {
-            let lines = file.text.match(/\r?\n/g);
-            let numlines = lines ? lines.length + 1 : 2;
-            let selection = this._gutter
-                .selectAll('pre')
-                .data(sequence(numlines));
-            selection
-                .exit()
-                .remove();
-            selection
-                .enter()
-                .append('pre')
-                .attr('class', 'line-number')
-                .append('code')
-                .append('span')
-                .attr('class', 'hljs-comment')
-                .html(d => d + 1);
-        }
-    }
-    hljs.registerLanguage('alloy', function () {
-        let NUMBER_RE = '\\b\\d+';
-        return {
-            // case_insensitive
-            case_insensitive: false,
-            // keywords
-            keywords: 'abstract all and as assert but check disj ' +
-                'else exactly extends fact for fun iden iff implies ' +
-                'in Int let lone module no none not one open or pred ' +
-                'run set sig some sum univ',
-            // contains
-            contains: [
-                // hljs.COMMENT
-                hljs.COMMENT('//', '$'),
-                hljs.COMMENT('--', '$'),
-                hljs.COMMENT('/\\*', '\\*/'),
-                {
-                    // className
-                    className: 'number',
-                    // begin
-                    begin: NUMBER_RE,
-                    // relevance
-                    relevance: 0
-                }
-            ]
-        };
-    });
-
     class UI {
         constructor() {
             this._initialize_alloy_connection();
@@ -11904,6 +12641,13 @@
             this._table_view = null;
             this._tree_view = null;
             this._source_view = null;
+            document.onkeydown = (e) => {
+                if (this._nav_bar._active != 'nav-eval') {
+                    if ([32, 39, 78].indexOf(e.keyCode) > -1) { // [space, right, n]
+                        this._alloy.request_next();
+                    }
+                }
+            };
         }
         // Initializers
         connect() {
@@ -11911,8 +12655,7 @@
             return this;
         }
         eval_view(selector) {
-            this._eval_view = new EvaluatorView(select(selector));
-            this._eval_view.set_alloy(this._alloy);
+            this._eval_view = new EvaluatorViewNew(select(selector), this._alloy);
             return this;
         }
         graph_view(selector) {

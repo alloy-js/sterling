@@ -6321,7 +6321,6 @@ code {
   justify-content: space-between;
 }
 .eval .eval-editor .eval-output {
-  flex: 0 1 auto;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -6329,15 +6328,12 @@ code {
 }
 .eval .eval-editor .eval-output .output {
   display: flex;
+  flex: 1 0 auto;
   flex-direction: column;
   font-family: "Fira Code", monospace;
   font-size: 0.9em;
-  border: 1px solid #e1e2e1;
   border-radius: 4px 4px 0 0;
   margin: 0.5em;
-}
-.eval .eval-editor .eval-output .output.active {
-  border: 1px solid #708690;
 }
 .eval .eval-editor .eval-output .output.active .expression {
   padding: 0.5em;
@@ -6356,10 +6352,14 @@ code {
   overflow-wrap: break-word;
 }
 .eval .eval-editor .eval-output .output .result {
+  flex: 1 0 auto;
   min-height: 1em;
   padding: 0.5em;
   color: #708690;
   overflow-wrap: break-word;
+}
+.eval .eval-editor .eval-output .output .result:not(.expanded) {
+  display: none;
 }
 .eval .eval-editor .eval-output .output .result.error {
   color: crimson;
@@ -6384,6 +6384,77 @@ code {
 }
 .eval .eval-display svg, .eval .eval-display canvas {
   flex: 1 1 auto;
+}
+.eval .eval-settings {
+  display: flex;
+  flex-direction: column;
+  background-color: white;
+  overflow-y: auto;
+}
+.eval .eval-settings .eval-tabs {
+  display: flex;
+  border-bottom: 1px solid #708690;
+}
+.eval .eval-settings .eval-tabs div {
+  padding: 5px;
+  cursor: pointer;
+  flex: 1 1 auto;
+  display: flex;
+  justify-content: center;
+}
+.eval .eval-settings .eval-tabs .active {
+  background-color: #708690;
+  color: #ffffff;
+}
+.eval .eval-settings .eval-expressions {
+  flex: 1 0 auto;
+}
+.eval .eval-settings .eval-expressions .expression {
+  font-family: "Fira Code", monospace;
+  font-size: 0.9em;
+  padding: 4px;
+  cursor: pointer;
+}
+.eval .eval-settings .eval-expressions .expression.graphed {
+  color: #ffffff;
+  background-color: #708690;
+}
+.eval .eval-settings .eval-expressions .expression:hover {
+  background-color: #455a64;
+  color: #ffffff;
+}
+.eval .eval-settings .eval-styles {
+  display: flex;
+  flex-direction: column;
+  padding: 5px;
+}
+.eval .eval-settings .eval-styles div {
+  padding: 5px;
+  display: flex;
+  align-items: center;
+}
+.eval .eval-settings .eval-styles div input[type=number] {
+  width: 50px;
+}
+.eval .eval-settings .eval-styles div label {
+  padding-left: 0.5em;
+}
+.eval .eval-settings .eval-styles .sigColors {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+.eval .eval-settings .eval-styles .sigColors .sigColor {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+.eval .eval-settings .eval-styles .sigColors .sigColor .title {
+  border-bottom: 1px solid #708690;
+}
+.eval .eval-settings .eval-styles .sigColors .sigColor .picker {
+  display: flex;
 }
 
 .gutter {

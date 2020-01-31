@@ -36,8 +36,8 @@ THE SOFTWARE.
     },{"./lib/debug":6,"./lib/graphlib":7,"./lib/layout":9,"./lib/util":29,"./lib/version":30}],2:[function(require,module,exports){
         "use strict";
 
-        var _ = require("./lodash"),
-            greedyFAS = require("./greedy-fas");
+        var _ = require("./lodash");
+        var greedyFAS = require("./greedy-fas");
 
         module.exports = {
             run: run,
@@ -64,9 +64,9 @@ THE SOFTWARE.
         }
 
         function dfsFAS(g) {
-            var fas = [],
-                stack = {},
-                visited = {};
+            var fas = [];
+            var stack = {};
+            var visited = {};
 
             function dfs(v) {
                 if (_.has(visited, v)) {
@@ -103,15 +103,15 @@ THE SOFTWARE.
         }
 
     },{"./greedy-fas":8,"./lodash":10}],3:[function(require,module,exports){
-        var _ = require("./lodash"),
-            util = require("./util");
+        var _ = require("./lodash");
+        var util = require("./util");
 
         module.exports = addBorderSegments;
 
         function addBorderSegments(g) {
             function dfs(v) {
-                var children = g.children(v),
-                    node = g.node(v);
+                var children = g.children(v);
+                var node = g.node(v);
                 if (children.length) {
                     _.forEach(children, dfs);
                 }
@@ -132,9 +132,9 @@ THE SOFTWARE.
         }
 
         function addBorderNode(g, prop, prefix, sg, sgNode, rank) {
-            var label = { width: 0, height: 0, rank: rank, borderType: prop },
-                prev = sgNode[prop][rank - 1],
-                curr = util.addDummyNode(g, "border", label, prefix);
+            var label = { width: 0, height: 0, rank: rank, borderType: prop };
+            var prev = sgNode[prop][rank - 1];
+            var curr = util.addDummyNode(g, "border", label, prefix);
             sgNode[prop][rank] = curr;
             g.setParent(curr, sg);
             if (prev) {
@@ -231,8 +231,8 @@ THE SOFTWARE.
         }
 
         List.prototype.dequeue = function() {
-            var sentinel = this._sentinel,
-                entry = sentinel._prev;
+            var sentinel = this._sentinel;
+            var entry = sentinel._prev;
             if (entry !== sentinel) {
                 unlink(entry);
                 return entry;
@@ -251,9 +251,9 @@ THE SOFTWARE.
         };
 
         List.prototype.toString = function() {
-            var strs = [],
-                sentinel = this._sentinel,
-                curr = sentinel._prev;
+            var strs = [];
+            var sentinel = this._sentinel;
+            var curr = sentinel._prev;
             while (curr !== sentinel) {
                 strs.push(JSON.stringify(curr, filterOutLinks));
                 curr = curr._prev;
@@ -275,9 +275,9 @@ THE SOFTWARE.
         }
 
     },{}],6:[function(require,module,exports){
-        var _ = require("./lodash"),
-            util = require("./util"),
-            Graph = require("./graphlib").Graph;
+        var _ = require("./lodash");
+        var util = require("./util");
+        var Graph = require("./graphlib").Graph;
 
         module.exports = {
             debugOrdering: debugOrdering
@@ -318,7 +318,9 @@ THE SOFTWARE.
         if (typeof require === "function") {
             try {
                 graphlib = require("graphlib");
-            } catch (e) {}
+            } catch (e) {
+                // continue regardless of error
+            }
         }
 
         if (!graphlib) {
@@ -328,9 +330,9 @@ THE SOFTWARE.
         module.exports = graphlib;
 
     },{"graphlib":31}],8:[function(require,module,exports){
-        var _ = require("./lodash"),
-            Graph = require("./graphlib").Graph,
-            List = require("./data/list");
+        var _ = require("./lodash");
+        var Graph = require("./graphlib").Graph;
+        var List = require("./data/list");
 
         /*
  * A greedy heuristic for finding a feedback arc set for a graph. A feedback
@@ -357,9 +359,9 @@ THE SOFTWARE.
         }
 
         function doGreedyFAS(g, buckets, zeroIdx) {
-            var results = [],
-                sources = buckets[buckets.length - 1],
-                sinks = buckets[0];
+            var results = [];
+            var sources = buckets[buckets.length - 1];
+            var sinks = buckets[0];
 
             var entry;
             while (g.nodeCount()) {
@@ -383,8 +385,8 @@ THE SOFTWARE.
             var results = collectPredecessors ? [] : undefined;
 
             _.forEach(g.inEdges(entry.v), function(edge) {
-                var weight = g.edge(edge),
-                    uEntry = g.node(edge.v);
+                var weight = g.edge(edge);
+                var uEntry = g.node(edge.v);
 
                 if (collectPredecessors) {
                     results.push({ v: edge.v, w: edge.w });
@@ -395,9 +397,9 @@ THE SOFTWARE.
             });
 
             _.forEach(g.outEdges(entry.v), function(edge) {
-                var weight = g.edge(edge),
-                    w = edge.w,
-                    wEntry = g.node(w);
+                var weight = g.edge(edge);
+                var w = edge.w;
+                var wEntry = g.node(w);
                 wEntry["in"] -= weight;
                 assignBucket(buckets, zeroIdx, wEntry);
             });
@@ -408,9 +410,9 @@ THE SOFTWARE.
         }
 
         function buildState(g, weightFn) {
-            var fasGraph = new Graph(),
-                maxIn = 0,
-                maxOut = 0;
+            var fasGraph = new Graph();
+            var maxIn = 0;
+            var maxOut = 0;
 
             _.forEach(g.nodes(), function(v) {
                 fasGraph.setNode(v, { v: v, "in": 0, out: 0 });
@@ -419,9 +421,9 @@ THE SOFTWARE.
             // Aggregate weights on nodes, but also sum the weights across multi-edges
             // into a single edge for the fasGraph.
             _.forEach(g.edges(), function(e) {
-                var prevWeight = fasGraph.edge(e.v, e.w) || 0,
-                    weight = weightFn(e),
-                    edgeWeight = prevWeight + weight;
+                var prevWeight = fasGraph.edge(e.v, e.w) || 0;
+                var weight = weightFn(e);
+                var edgeWeight = prevWeight + weight;
                 fasGraph.setEdge(e.v, e.w, edgeWeight);
                 maxOut = Math.max(maxOut, fasGraph.node(e.v).out += weight);
                 maxIn  = Math.max(maxIn,  fasGraph.node(e.w)["in"]  += weight);
@@ -450,28 +452,28 @@ THE SOFTWARE.
     },{"./data/list":5,"./graphlib":7,"./lodash":10}],9:[function(require,module,exports){
         "use strict";
 
-        var _ = require("./lodash"),
-            acyclic = require("./acyclic"),
-            normalize = require("./normalize"),
-            rank = require("./rank"),
-            normalizeRanks = require("./util").normalizeRanks,
-            parentDummyChains = require("./parent-dummy-chains"),
-            removeEmptyRanks = require("./util").removeEmptyRanks,
-            nestingGraph = require("./nesting-graph"),
-            addBorderSegments = require("./add-border-segments"),
-            coordinateSystem = require("./coordinate-system"),
-            order = require("./order"),
-            position = require("./position"),
-            util = require("./util"),
-            Graph = require("./graphlib").Graph;
+        var _ = require("./lodash");
+        var acyclic = require("./acyclic");
+        var normalize = require("./normalize");
+        var rank = require("./rank");
+        var normalizeRanks = require("./util").normalizeRanks;
+        var parentDummyChains = require("./parent-dummy-chains");
+        var removeEmptyRanks = require("./util").removeEmptyRanks;
+        var nestingGraph = require("./nesting-graph");
+        var addBorderSegments = require("./add-border-segments");
+        var coordinateSystem = require("./coordinate-system");
+        var order = require("./order");
+        var position = require("./position");
+        var util = require("./util");
+        var Graph = require("./graphlib").Graph;
 
         module.exports = layout;
 
         function layout(g, opts) {
             var time = opts && opts.debugTiming ? util.time : util.notime;
             time("layout", function() {
-                var layoutGraph = time("  buildLayoutGraph",
-                    function() { return buildLayoutGraph(g); });
+                var layoutGraph =
+                    time("  buildLayoutGraph", function() { return buildLayoutGraph(g); });
                 time("  runLayout",        function() { runLayout(layoutGraph, time); });
                 time("  updateInputGraph", function() { updateInputGraph(g, layoutGraph); });
             });
@@ -515,8 +517,8 @@ THE SOFTWARE.
  */
         function updateInputGraph(inputGraph, layoutGraph) {
             _.forEach(inputGraph.nodes(), function(v) {
-                var inputLabel = inputGraph.node(v),
-                    layoutLabel = layoutGraph.node(v);
+                var inputLabel = inputGraph.node(v);
+                var layoutLabel = layoutGraph.node(v);
 
                 if (inputLabel) {
                     inputLabel.x = layoutLabel.x;
@@ -530,8 +532,8 @@ THE SOFTWARE.
             });
 
             _.forEach(inputGraph.edges(), function(e) {
-                var inputLabel = inputGraph.edge(e),
-                    layoutLabel = layoutGraph.edge(e);
+                var inputLabel = inputGraph.edge(e);
+                var layoutLabel = layoutGraph.edge(e);
 
                 inputLabel.points = layoutLabel.points;
                 if (_.has(layoutLabel, "x")) {
@@ -544,17 +546,17 @@ THE SOFTWARE.
             inputGraph.graph().height = layoutGraph.graph().height;
         }
 
-        var graphNumAttrs = ["nodesep", "edgesep", "ranksep", "marginx", "marginy"],
-            graphDefaults = { ranksep: 50, edgesep: 20, nodesep: 50, rankdir: "tb" },
-            graphAttrs = ["acyclicer", "ranker", "rankdir", "align"],
-            nodeNumAttrs = ["width", "height"],
-            nodeDefaults = { width: 0, height: 0 },
-            edgeNumAttrs = ["minlen", "weight", "width", "height", "labeloffset"],
-            edgeDefaults = {
-                minlen: 1, weight: 1, width: 0, height: 0,
-                labeloffset: 10, labelpos: "r"
-            },
-            edgeAttrs = ["labelpos"];
+        var graphNumAttrs = ["nodesep", "edgesep", "ranksep", "marginx", "marginy"];
+        var graphDefaults = { ranksep: 50, edgesep: 20, nodesep: 50, rankdir: "tb" };
+        var graphAttrs = ["acyclicer", "ranker", "rankdir", "align"];
+        var nodeNumAttrs = ["width", "height"];
+        var nodeDefaults = { width: 0, height: 0 };
+        var edgeNumAttrs = ["minlen", "weight", "width", "height", "labeloffset"];
+        var edgeDefaults = {
+            minlen: 1, weight: 1, width: 0, height: 0,
+            labeloffset: 10, labelpos: "r"
+        };
+        var edgeAttrs = ["labelpos"];
 
         /*
  * Constructs a new graph from the input graph, which can be used for layout.
@@ -563,8 +565,8 @@ THE SOFTWARE.
  * attributes can influence layout.
  */
         function buildLayoutGraph(inputGraph) {
-            var g = new Graph({ multigraph: true, compound: true }),
-                graph = canonicalize(inputGraph.graph());
+            var g = new Graph({ multigraph: true, compound: true });
+            var graph = canonicalize(inputGraph.graph());
 
             g.setGraph(_.merge({},
                 graphDefaults,
@@ -622,9 +624,9 @@ THE SOFTWARE.
             _.forEach(g.edges(), function(e) {
                 var edge = g.edge(e);
                 if (edge.width && edge.height) {
-                    var v = g.node(e.v),
-                        w = g.node(e.w),
-                        label = { rank: (w.rank - v.rank) / 2 + v.rank, e: e };
+                    var v = g.node(e.v);
+                    var w = g.node(e.w);
+                    var label = { rank: (w.rank - v.rank) / 2 + v.rank, e: e };
                     util.addDummyNode(g, "edge-proxy", label, "_ep");
                 }
             });
@@ -654,19 +656,19 @@ THE SOFTWARE.
         }
 
         function translateGraph(g) {
-            var minX = Number.POSITIVE_INFINITY,
-                maxX = 0,
-                minY = Number.POSITIVE_INFINITY,
-                maxY = 0,
-                graphLabel = g.graph(),
-                marginX = graphLabel.marginx || 0,
-                marginY = graphLabel.marginy || 0;
+            var minX = Number.POSITIVE_INFINITY;
+            var maxX = 0;
+            var minY = Number.POSITIVE_INFINITY;
+            var maxY = 0;
+            var graphLabel = g.graph();
+            var marginX = graphLabel.marginx || 0;
+            var marginY = graphLabel.marginy || 0;
 
             function getExtremes(attrs) {
-                var x = attrs.x,
-                    y = attrs.y,
-                    w = attrs.width,
-                    h = attrs.height;
+                var x = attrs.x;
+                var y = attrs.y;
+                var w = attrs.width;
+                var h = attrs.height;
                 minX = Math.min(minX, x - w / 2);
                 maxX = Math.max(maxX, x + w / 2);
                 minY = Math.min(minY, y - h / 2);
@@ -706,10 +708,10 @@ THE SOFTWARE.
 
         function assignNodeIntersects(g) {
             _.forEach(g.edges(), function(e) {
-                var edge = g.edge(e),
-                    nodeV = g.node(e.v),
-                    nodeW = g.node(e.w),
-                    p1, p2;
+                var edge = g.edge(e);
+                var nodeV = g.node(e.v);
+                var nodeW = g.node(e.w);
+                var p1, p2;
                 if (!edge.points) {
                     edge.points = [];
                     p1 = nodeW;
@@ -750,11 +752,11 @@ THE SOFTWARE.
         function removeBorderNodes(g) {
             _.forEach(g.nodes(), function(v) {
                 if (g.children(v).length) {
-                    var node = g.node(v),
-                        t = g.node(node.borderTop),
-                        b = g.node(node.borderBottom),
-                        l = g.node(_.last(node.borderLeft)),
-                        r = g.node(_.last(node.borderRight));
+                    var node = g.node(v);
+                    var t = g.node(node.borderTop);
+                    var b = g.node(node.borderBottom);
+                    var l = g.node(_.last(node.borderLeft));
+                    var r = g.node(_.last(node.borderRight));
 
                     node.width = Math.abs(r.x - l.x);
                     node.height = Math.abs(b.y - t.y);
@@ -809,11 +811,11 @@ THE SOFTWARE.
             _.forEach(g.nodes(), function(v) {
                 var node = g.node(v);
                 if (node.dummy === "selfedge") {
-                    var selfNode = g.node(node.e.v),
-                        x = selfNode.x + selfNode.width / 2,
-                        y = selfNode.y,
-                        dx = node.x - x,
-                        dy = selfNode.height / 2;
+                    var selfNode = g.node(node.e.v);
+                    var x = selfNode.x + selfNode.width / 2;
+                    var y = selfNode.y;
+                    var dx = node.x - x;
+                    var dy = selfNode.height / 2;
                     g.setEdge(node.e, node.label);
                     g.removeNode(v);
                     node.label.points = [
@@ -876,7 +878,9 @@ THE SOFTWARE.
                     values: require("lodash/values"),
                     zipObject: require("lodash/zipObject"),
                 };
-            } catch (e) {}
+            } catch (e) {
+                // continue regardless of error
+            }
         }
 
         if (!lodash) {
@@ -886,8 +890,8 @@ THE SOFTWARE.
         module.exports = lodash;
 
     },{"lodash/cloneDeep":227,"lodash/constant":228,"lodash/defaults":229,"lodash/each":230,"lodash/filter":232,"lodash/find":233,"lodash/flatten":235,"lodash/forEach":236,"lodash/forIn":237,"lodash/has":239,"lodash/isUndefined":258,"lodash/last":261,"lodash/map":262,"lodash/mapValues":263,"lodash/max":264,"lodash/merge":266,"lodash/min":267,"lodash/minBy":268,"lodash/now":270,"lodash/pick":271,"lodash/range":273,"lodash/reduce":274,"lodash/sortBy":276,"lodash/uniqueId":286,"lodash/values":287,"lodash/zipObject":288}],11:[function(require,module,exports){
-        var _ = require("./lodash"),
-            util = require("./util");
+        var _ = require("./lodash");
+        var util = require("./util");
 
         module.exports = {
             run: run,
@@ -950,9 +954,9 @@ THE SOFTWARE.
                 return;
             }
 
-            var top = util.addBorderNode(g, "_bt"),
-                bottom = util.addBorderNode(g, "_bb"),
-                label = g.node(v);
+            var top = util.addBorderNode(g, "_bt");
+            var bottom = util.addBorderNode(g, "_bb");
+            var label = g.node(v);
 
             g.setParent(top, v);
             label.borderTop = top;
@@ -962,11 +966,11 @@ THE SOFTWARE.
             _.forEach(children, function(child) {
                 dfs(g, root, nodeSep, weight, height, depths, child);
 
-                var childNode = g.node(child),
-                    childTop = childNode.borderTop ? childNode.borderTop : child,
-                    childBottom = childNode.borderBottom ? childNode.borderBottom : child,
-                    thisWeight = childNode.borderTop ? weight : 2 * weight,
-                    minlen = childTop !== childBottom ? 1 : height - depths[v] + 1;
+                var childNode = g.node(child);
+                var childTop = childNode.borderTop ? childNode.borderTop : child;
+                var childBottom = childNode.borderBottom ? childNode.borderBottom : child;
+                var thisWeight = childNode.borderTop ? weight : 2 * weight;
+                var minlen = childTop !== childBottom ? 1 : height - depths[v] + 1;
 
                 g.setEdge(top, childTop, {
                     weight: thisWeight,
@@ -1022,8 +1026,8 @@ THE SOFTWARE.
     },{"./lodash":10,"./util":29}],12:[function(require,module,exports){
         "use strict";
 
-        var _ = require("./lodash"),
-            util = require("./util");
+        var _ = require("./lodash");
+        var util = require("./util");
 
         module.exports = {
             run: run,
@@ -1052,13 +1056,13 @@ THE SOFTWARE.
         }
 
         function normalizeEdge(g, e) {
-            var v = e.v,
-                vRank = g.node(v).rank,
-                w = e.w,
-                wRank = g.node(w).rank,
-                name = e.name,
-                edgeLabel = g.edge(e),
-                labelRank = edgeLabel.labelRank;
+            var v = e.v;
+            var vRank = g.node(v).rank;
+            var w = e.w;
+            var wRank = g.node(w).rank;
+            var name = e.name;
+            var edgeLabel = g.edge(e);
+            var labelRank = edgeLabel.labelRank;
 
             if (wRank === vRank + 1) return;
 
@@ -1091,9 +1095,9 @@ THE SOFTWARE.
 
         function undo(g) {
             _.forEach(g.graph().dummyChains, function(v) {
-                var node = g.node(v),
-                    origLabel = node.edgeLabel,
-                    w;
+                var node = g.node(v);
+                var origLabel = node.edgeLabel;
+                var w;
                 g.setEdge(node.edgeObj, origLabel);
                 while (node.dummy) {
                     w = g.successors(v)[0];
@@ -1197,8 +1201,8 @@ THE SOFTWARE.
 
 
     },{"../lodash":10}],15:[function(require,module,exports){
-        var _ = require("../lodash"),
-            Graph = require("../graphlib").Graph;
+        var _ = require("../lodash");
+        var Graph = require("../graphlib").Graph;
 
         module.exports = buildLayerGraph;
 
@@ -1343,14 +1347,14 @@ THE SOFTWARE.
     },{"../lodash":10}],17:[function(require,module,exports){
         "use strict";
 
-        var _ = require("../lodash"),
-            initOrder = require("./init-order"),
-            crossCount = require("./cross-count"),
-            sortSubgraph = require("./sort-subgraph"),
-            buildLayerGraph = require("./build-layer-graph"),
-            addSubgraphConstraints = require("./add-subgraph-constraints"),
-            Graph = require("../graphlib").Graph,
-            util = require("../util");
+        var _ = require("../lodash");
+        var initOrder = require("./init-order");
+        var crossCount = require("./cross-count");
+        var sortSubgraph = require("./sort-subgraph");
+        var buildLayerGraph = require("./build-layer-graph");
+        var addSubgraphConstraints = require("./add-subgraph-constraints");
+        var Graph = require("../graphlib").Graph;
+        var util = require("../util");
 
         module.exports = order;
 
@@ -1440,12 +1444,12 @@ THE SOFTWARE.
  * the order of its nodes.
  */
         function initOrder(g) {
-            var visited = {},
-                simpleNodes = _.filter(g.nodes(), function(v) {
-                    return !g.children(v).length;
-                }),
-                maxRank = _.max(_.map(simpleNodes, function(v) { return g.node(v).rank; })),
-                layers = _.map(_.range(maxRank + 1), function() { return []; });
+            var visited = {};
+            var simpleNodes = _.filter(g.nodes(), function(v) {
+                return !g.children(v).length;
+            });
+            var maxRank = _.max(_.map(simpleNodes, function(v) { return g.node(v).rank; }));
+            var layers = _.map(_.range(maxRank + 1), function() { return []; });
 
             function dfs(v) {
                 if (_.has(visited, v)) return;
@@ -1510,8 +1514,8 @@ THE SOFTWARE.
             });
 
             _.forEach(cg.edges(), function(e) {
-                var entryV = mappedEntries[e.v],
-                    entryW = mappedEntries[e.w];
+                var entryV = mappedEntries[e.v];
+                var entryW = mappedEntries[e.w];
                 if (!_.isUndefined(entryV) && !_.isUndefined(entryW)) {
                     entryW.indegree++;
                     entryV.out.push(mappedEntries[e.w]);
@@ -1565,8 +1569,8 @@ THE SOFTWARE.
         }
 
         function mergeEntries(target, source) {
-            var sum = 0,
-                weight = 0;
+            var sum = 0;
+            var weight = 0;
 
             if (target.weight) {
                 sum += target.barycenter * target.weight;
@@ -1586,19 +1590,19 @@ THE SOFTWARE.
         }
 
     },{"../lodash":10}],20:[function(require,module,exports){
-        var _ = require("../lodash"),
-            barycenter = require("./barycenter"),
-            resolveConflicts = require("./resolve-conflicts"),
-            sort = require("./sort");
+        var _ = require("../lodash");
+        var barycenter = require("./barycenter");
+        var resolveConflicts = require("./resolve-conflicts");
+        var sort = require("./sort");
 
         module.exports = sortSubgraph;
 
         function sortSubgraph(g, v, cg, biasRight) {
-            var movable = g.children(v),
-                node = g.node(v),
-                bl = node ? node.borderLeft : undefined,
-                br = node ? node.borderRight: undefined,
-                subgraphs = {};
+            var movable = g.children(v);
+            var node = g.node(v);
+            var bl = node ? node.borderLeft : undefined;
+            var br = node ? node.borderRight: undefined;
+            var subgraphs = {};
 
             if (bl) {
                 movable = _.filter(movable, function(w) {
@@ -1664,8 +1668,8 @@ THE SOFTWARE.
         }
 
     },{"../lodash":10,"./barycenter":14,"./resolve-conflicts":19,"./sort":21}],21:[function(require,module,exports){
-        var _ = require("../lodash"),
-            util = require("../util");
+        var _ = require("../lodash");
+        var util = require("../util");
 
         module.exports = sort;
 
@@ -1731,14 +1735,14 @@ THE SOFTWARE.
             var postorderNums = postorder(g);
 
             _.forEach(g.graph().dummyChains, function(v) {
-                var node = g.node(v),
-                    edgeObj = node.edgeObj,
-                    pathData = findPath(g, postorderNums, edgeObj.v, edgeObj.w),
-                    path = pathData.path,
-                    lca = pathData.lca,
-                    pathIdx = 0,
-                    pathV = path[pathIdx],
-                    ascending = true;
+                var node = g.node(v);
+                var edgeObj = node.edgeObj;
+                var pathData = findPath(g, postorderNums, edgeObj.v, edgeObj.w);
+                var path = pathData.path;
+                var lca = pathData.lca;
+                var pathIdx = 0;
+                var pathV = path[pathIdx];
+                var ascending = true;
 
                 while (v !== edgeObj.w) {
                     node = g.node(v);
@@ -1771,12 +1775,12 @@ THE SOFTWARE.
 // Find a path from v to w through the lowest common ancestor (LCA). Return the
 // full path and the LCA.
         function findPath(g, postorderNums, v, w) {
-            var vPath = [],
-                wPath = [],
-                low = Math.min(postorderNums[v].low, postorderNums[w].low),
-                lim = Math.max(postorderNums[v].lim, postorderNums[w].lim),
-                parent,
-                lca;
+            var vPath = [];
+            var wPath = [];
+            var low = Math.min(postorderNums[v].low, postorderNums[w].low);
+            var lim = Math.max(postorderNums[v].lim, postorderNums[w].lim);
+            var parent;
+            var lca;
 
             // Traverse up from v to find the LCA
             parent = v;
@@ -1797,8 +1801,8 @@ THE SOFTWARE.
         }
 
         function postorder(g) {
-            var result = {},
-                lim = 0;
+            var result = {};
+            var lim = 0;
 
             function dfs(v) {
                 var low = lim;
@@ -1813,9 +1817,9 @@ THE SOFTWARE.
     },{"./lodash":10}],23:[function(require,module,exports){
         "use strict";
 
-        var _ = require("../lodash"),
-            Graph = require("../graphlib").Graph,
-            util = require("../util");
+        var _ = require("../lodash");
+        var Graph = require("../graphlib").Graph;
+        var util = require("../util");
 
         /*
  * This module provides coordinate assignment based on Brandes and Köpf, "Fast
@@ -2157,12 +2161,13 @@ THE SOFTWARE.
         }
 
         function positionX(g) {
-            var layering = util.buildLayerMatrix(g),
-                conflicts = _.merge(findType1Conflicts(g, layering),
-                    findType2Conflicts(g, layering));
+            var layering = util.buildLayerMatrix(g);
+            var conflicts = _.merge(
+                findType1Conflicts(g, layering),
+                findType2Conflicts(g, layering));
 
-            var xss = {},
-                adjustedLayering;
+            var xss = {};
+            var adjustedLayering;
             _.forEach(["u", "d"], function(vert) {
                 adjustedLayering = vert === "u" ? layering : _.values(layering).reverse();
                 _.forEach(["l", "r"], function(horiz) {
@@ -2175,8 +2180,7 @@ THE SOFTWARE.
                     var neighborFn = (vert === "u" ? g.predecessors : g.successors).bind(g);
                     var align = verticalAlignment(g, adjustedLayering, conflicts, neighborFn);
                     var xs = horizontalCompaction(g, adjustedLayering,
-                        align.root, align.align,
-                        horiz === "r");
+                        align.root, align.align, horiz === "r");
                     if (horiz === "r") {
                         xs = _.mapValues(xs, function(x) { return -x; });
                     }
@@ -2191,10 +2195,10 @@ THE SOFTWARE.
 
         function sep(nodeSep, edgeSep, reverseSep) {
             return function(g, v, w) {
-                var vLabel = g.node(v),
-                    wLabel = g.node(w),
-                    sum = 0,
-                    delta;
+                var vLabel = g.node(v);
+                var wLabel = g.node(w);
+                var sum = 0;
+                var delta;
 
                 sum += vLabel.width / 2;
                 if (_.has(vLabel, "labelpos")) {
@@ -2234,9 +2238,9 @@ THE SOFTWARE.
     },{"../graphlib":7,"../lodash":10,"../util":29}],24:[function(require,module,exports){
         "use strict";
 
-        var _ = require("../lodash"),
-            util = require("../util"),
-            positionX = require("./bk").positionX;
+        var _ = require("../lodash");
+        var util = require("../util");
+        var positionX = require("./bk").positionX;
 
         module.exports = position;
 
@@ -2250,9 +2254,9 @@ THE SOFTWARE.
         }
 
         function positionY(g) {
-            var layering = util.buildLayerMatrix(g),
-                rankSep = g.graph().ranksep,
-                prevY = 0;
+            var layering = util.buildLayerMatrix(g);
+            var rankSep = g.graph().ranksep;
+            var prevY = 0;
             _.forEach(layering, function(layer) {
                 var maxHeight = _.max(_.map(layer, function(v) { return g.node(v).height; }));
                 _.forEach(layer, function(v) {
@@ -2266,9 +2270,9 @@ THE SOFTWARE.
     },{"../lodash":10,"../util":29,"./bk":23}],25:[function(require,module,exports){
         "use strict";
 
-        var _ = require("../lodash"),
-            Graph = require("../graphlib").Graph,
-            slack = require("./util").slack;
+        var _ = require("../lodash");
+        var Graph = require("../graphlib").Graph;
+        var slack = require("./util").slack;
 
         module.exports = feasibleTree;
 
@@ -2301,8 +2305,8 @@ THE SOFTWARE.
             var t = new Graph({ directed: false });
 
             // Choose arbitrary node from which to start our tree
-            var start = g.nodes()[0],
-                size = g.nodeCount();
+            var start = g.nodes()[0];
+            var size = g.nodeCount();
             t.setNode(start, {});
 
             var edge, delta;
@@ -2357,10 +2361,10 @@ THE SOFTWARE.
     },{"../graphlib":7,"../lodash":10,"./util":28}],26:[function(require,module,exports){
         "use strict";
 
-        var rankUtil = require("./util"),
-            longestPath = rankUtil.longestPath,
-            feasibleTree = require("./feasible-tree"),
-            networkSimplex = require("./network-simplex");
+        var rankUtil = require("./util");
+        var longestPath = rankUtil.longestPath;
+        var feasibleTree = require("./feasible-tree");
+        var networkSimplex = require("./network-simplex");
 
         module.exports = rank;
 
@@ -2407,13 +2411,13 @@ THE SOFTWARE.
     },{"./feasible-tree":25,"./network-simplex":27,"./util":28}],27:[function(require,module,exports){
         "use strict";
 
-        var _ = require("../lodash"),
-            feasibleTree = require("./feasible-tree"),
-            slack = require("./util").slack,
-            initRank = require("./util").longestPath,
-            preorder = require("../graphlib").alg.preorder,
-            postorder = require("../graphlib").alg.postorder,
-            simplify = require("../util").simplify;
+        var _ = require("../lodash");
+        var feasibleTree = require("./feasible-tree");
+        var slack = require("./util").slack;
+        var initRank = require("./util").longestPath;
+        var preorder = require("../graphlib").alg.preorder;
+        var postorder = require("../graphlib").alg.postorder;
+        var simplify = require("../util").simplify;
 
         module.exports = networkSimplex;
 
@@ -2484,8 +2488,8 @@ THE SOFTWARE.
         }
 
         function assignCutValue(t, g, child) {
-            var childLab = t.node(child),
-                parent = childLab.parent;
+            var childLab = t.node(child);
+            var parent = childLab.parent;
             t.edge(child, parent).cutvalue = calcCutValue(t, g, child);
         }
 
@@ -2494,14 +2498,14 @@ THE SOFTWARE.
  * return the cut value for the edge between the child and its parent.
  */
         function calcCutValue(t, g, child) {
-            var childLab = t.node(child),
-                parent = childLab.parent,
-                // True if the child is on the tail end of the edge in the directed graph
-                childIsTail = true,
-                // The graph's view of the tree edge we're inspecting
-                graphEdge = g.edge(child, parent),
-                // The accumulated cut value for the edge between this node and its parent
-                cutValue = 0;
+            var childLab = t.node(child);
+            var parent = childLab.parent;
+            // True if the child is on the tail end of the edge in the directed graph
+            var childIsTail = true;
+            // The graph's view of the tree edge we're inspecting
+            var graphEdge = g.edge(child, parent);
+            // The accumulated cut value for the edge between this node and its parent
+            var cutValue = 0;
 
             if (!graphEdge) {
                 childIsTail = false;
@@ -2537,8 +2541,8 @@ THE SOFTWARE.
         }
 
         function dfsAssignLowLim(tree, visited, nextLim, v, parent) {
-            var low = nextLim,
-                label = tree.node(v);
+            var low = nextLim;
+            var label = tree.node(v);
 
             visited[v] = true;
             _.forEach(tree.neighbors(v), function(w) {
@@ -2566,8 +2570,8 @@ THE SOFTWARE.
         }
 
         function enterEdge(t, g, edge) {
-            var v = edge.v,
-                w = edge.w;
+            var v = edge.v;
+            var w = edge.w;
 
             // For the rest of this function we assume that v is the tail and w is the
             // head, so if we don't have this edge in the graph we should flip it to
@@ -2577,10 +2581,10 @@ THE SOFTWARE.
                 w = edge.v;
             }
 
-            var vLabel = t.node(v),
-                wLabel = t.node(w),
-                tailLabel = vLabel,
-                flip = false;
+            var vLabel = t.node(v);
+            var wLabel = t.node(w);
+            var tailLabel = vLabel;
+            var flip = false;
 
             // If the root is in the tail of the edge then we need to flip the logic that
             // checks for the head and tail nodes in the candidates function below.
@@ -2598,8 +2602,8 @@ THE SOFTWARE.
         }
 
         function exchangeEdges(t, g, e, f) {
-            var v = e.v,
-                w = e.w;
+            var v = e.v;
+            var w = e.w;
             t.removeEdge(v, w);
             t.setEdge(f.v, f.w, {});
             initLowLimValues(t);
@@ -2608,8 +2612,8 @@ THE SOFTWARE.
         }
 
         function updateRanks(t, g) {
-            var root = _.find(t.nodes(), function(v) { return !g.node(v).parent; }),
-                vs = preorder(t, root);
+            var root = _.find(t.nodes(), function(v) { return !g.node(v).parent; });
+            var vs = preorder(t, root);
             vs = vs.slice(1);
             _.forEach(vs, function(v) {
                 var parent = t.node(v).parent,
@@ -2706,10 +2710,12 @@ THE SOFTWARE.
         }
 
     },{"../lodash":10}],29:[function(require,module,exports){
+        /* eslint "no-console": off */
+
         "use strict";
 
-        var _ = require("./lodash"),
-            Graph = require("./graphlib").Graph;
+        var _ = require("./lodash");
+        var Graph = require("./graphlib").Graph;
 
         module.exports = {
             addDummyNode: addDummyNode,
@@ -2750,8 +2756,8 @@ THE SOFTWARE.
             var simplified = new Graph().setGraph(g.graph());
             _.forEach(g.nodes(), function(v) { simplified.setNode(v, g.node(v)); });
             _.forEach(g.edges(), function(e) {
-                var simpleLabel = simplified.edge(e.v, e.w) || { weight: 0, minlen: 1 },
-                    label = g.edge(e);
+                var simpleLabel = simplified.edge(e.v, e.w) || { weight: 0, minlen: 1 };
+                var label = g.edge(e);
                 simplified.setEdge(e.v, e.w, {
                     weight: simpleLabel.weight + label.weight,
                     minlen: Math.max(simpleLabel.minlen, label.minlen)
@@ -2841,8 +2847,8 @@ THE SOFTWARE.
         function buildLayerMatrix(g) {
             var layering = _.map(_.range(maxRank(g) + 1), function() { return []; });
             _.forEach(g.nodes(), function(v) {
-                var node = g.node(v),
-                    rank = node.rank;
+                var node = g.node(v);
+                var rank = node.rank;
                 if (!_.isUndefined(rank)) {
                     layering[rank][node.order] = v;
                 }
@@ -2877,8 +2883,8 @@ THE SOFTWARE.
                 layers[rank].push(v);
             });
 
-            var delta = 0,
-                nodeRankFactor = g.graph().nodeRankFactor;
+            var delta = 0;
+            var nodeRankFactor = g.graph().nodeRankFactor;
             _.forEach(layers, function(vs, i) {
                 if (_.isUndefined(vs) && i % nodeRankFactor !== 0) {
                     --delta;
@@ -2944,7 +2950,7 @@ THE SOFTWARE.
         }
 
     },{"./graphlib":7,"./lodash":10}],30:[function(require,module,exports){
-        module.exports = "0.8.4";
+        module.exports = "0.8.5";
 
     },{}],31:[function(require,module,exports){
         /**
@@ -2992,9 +2998,9 @@ THE SOFTWARE.
         module.exports = components;
 
         function components(g) {
-            var visited = {},
-                cmpts = [],
-                cmpt;
+            var visited = {};
+            var cmpts = [];
+            var cmpt;
 
             function dfs(v) {
                 if (_.has(visited, v)) return;
@@ -3035,8 +3041,8 @@ THE SOFTWARE.
 
             var navigation = (g.isDirected() ? g.successors : g.neighbors).bind(g);
 
-            var acc = [],
-                visited = {};
+            var acc = [];
+            var visited = {};
             _.each(vs, function(v) {
                 if (!g.hasNode(v)) {
                     throw new Error("Graph does not have node: " + v);
@@ -3060,8 +3066,8 @@ THE SOFTWARE.
         }
 
     },{"../lodash":49}],34:[function(require,module,exports){
-        var dijkstra = require("./dijkstra"),
-            _ = require("../lodash");
+        var dijkstra = require("./dijkstra");
+        var _ = require("../lodash");
 
         module.exports = dijkstraAll;
 
@@ -3072,8 +3078,8 @@ THE SOFTWARE.
         }
 
     },{"../lodash":49,"./dijkstra":35}],35:[function(require,module,exports){
-        var _ = require("../lodash"),
-            PriorityQueue = require("../data/priority-queue");
+        var _ = require("../lodash");
+        var PriorityQueue = require("../data/priority-queue");
 
         module.exports = dijkstra;
 
@@ -3086,15 +3092,15 @@ THE SOFTWARE.
         }
 
         function runDijkstra(g, source, weightFn, edgeFn) {
-            var results = {},
-                pq = new PriorityQueue(),
-                v, vEntry;
+            var results = {};
+            var pq = new PriorityQueue();
+            var v, vEntry;
 
             var updateNeighbors = function(edge) {
-                var w = edge.v !== v ? edge.v : edge.w,
-                    wEntry = results[w],
-                    weight = weightFn(edge),
-                    distance = vEntry.distance + weight;
+                var w = edge.v !== v ? edge.v : edge.w;
+                var wEntry = results[w];
+                var weight = weightFn(edge);
+                var distance = vEntry.distance + weight;
 
                 if (weight < 0) {
                     throw new Error("dijkstra does not allow negative edge weights. " +
@@ -3128,8 +3134,8 @@ THE SOFTWARE.
         }
 
     },{"../data/priority-queue":45,"../lodash":49}],36:[function(require,module,exports){
-        var _ = require("../lodash"),
-            tarjan = require("./tarjan");
+        var _ = require("../lodash");
+        var tarjan = require("./tarjan");
 
         module.exports = findCycles;
 
@@ -3153,8 +3159,8 @@ THE SOFTWARE.
         }
 
         function runFloydWarshall(g, weightFn, edgeFn) {
-            var results = {},
-                nodes = g.nodes();
+            var results = {};
+            var nodes = g.nodes();
 
             nodes.forEach(function(v) {
                 results[v] = {};
@@ -3165,8 +3171,8 @@ THE SOFTWARE.
                     }
                 });
                 edgeFn(v).forEach(function(edge) {
-                    var w = edge.v === v ? edge.w : edge.v,
-                        d = weightFn(edge);
+                    var w = edge.v === v ? edge.w : edge.v;
+                    var d = weightFn(edge);
                     results[v][w] = { distance: d, predecessor: v };
                 });
             });
@@ -3242,21 +3248,21 @@ THE SOFTWARE.
         }
 
     },{"./dfs":33}],42:[function(require,module,exports){
-        var _ = require("../lodash"),
-            Graph = require("../graph"),
-            PriorityQueue = require("../data/priority-queue");
+        var _ = require("../lodash");
+        var Graph = require("../graph");
+        var PriorityQueue = require("../data/priority-queue");
 
         module.exports = prim;
 
         function prim(g, weightFunc) {
-            var result = new Graph(),
-                parents = {},
-                pq = new PriorityQueue(),
-                v;
+            var result = new Graph();
+            var parents = {};
+            var pq = new PriorityQueue();
+            var v;
 
             function updateNeighbors(edge) {
-                var w = edge.v === v ? edge.w : edge.v,
-                    pri = pq.priority(w);
+                var w = edge.v === v ? edge.w : edge.v;
+                var pri = pq.priority(w);
                 if (pri !== undefined) {
                     var edgeWeight = weightFunc(edge);
                     if (edgeWeight < pri) {
@@ -3301,10 +3307,10 @@ THE SOFTWARE.
         module.exports = tarjan;
 
         function tarjan(g) {
-            var index = 0,
-                stack = [],
-                visited = {}, // node id -> { onStack, lowlink, index }
-                results = [];
+            var index = 0;
+            var stack = [];
+            var visited = {}; // node id -> { onStack, lowlink, index }
+            var results = [];
 
             function dfs(v) {
                 var entry = visited[v] = {
@@ -3324,8 +3330,8 @@ THE SOFTWARE.
                 });
 
                 if (entry.lowlink === entry.index) {
-                    var cmpt = [],
-                        w;
+                    var cmpt = [];
+                    var w;
                     do {
                         w = stack.pop();
                         visited[w].onStack = false;
@@ -3351,9 +3357,9 @@ THE SOFTWARE.
         topsort.CycleException = CycleException;
 
         function topsort(g) {
-            var visited = {},
-                stack = {},
-                results = [];
+            var visited = {};
+            var stack = {};
+            var results = [];
 
             function visit(node) {
                 if (_.has(stack, node)) {
@@ -3494,9 +3500,9 @@ THE SOFTWARE.
 
         PriorityQueue.prototype._heapify = function(i) {
             var arr = this._arr;
-            var l = 2 * i,
-                r = l + 1,
-                largest = i;
+            var l = 2 * i;
+            var r = l + 1;
+            var largest = i;
             if (l < arr.length) {
                 largest = arr[l].priority < arr[largest].priority ? l : largest;
                 if (r < arr.length) {
@@ -3541,9 +3547,9 @@ THE SOFTWARE.
 
         module.exports = Graph;
 
-        var DEFAULT_EDGE_NAME = "\x00",
-            GRAPH_NODE = "\x00",
-            EDGE_KEY_DELIM = "\x01";
+        var DEFAULT_EDGE_NAME = "\x00";
+        var GRAPH_NODE = "\x00";
+        var EDGE_KEY_DELIM = "\x01";
 
 // Implementation notes:
 //
@@ -3883,8 +3889,8 @@ THE SOFTWARE.
         };
 
         Graph.prototype.setPath = function(vs, value) {
-            var self = this,
-                args = arguments;
+            var self = this;
+            var args = arguments;
             _.reduce(vs, function(v, w) {
                 if (args.length > 1) {
                     self.setEdge(v, w, value);
@@ -3901,9 +3907,9 @@ THE SOFTWARE.
  * setEdge({ v, w, [name] }, [value])
  */
         Graph.prototype.setEdge = function() {
-            var v, w, name, value,
-                valueSpecified = false,
-                arg0 = arguments[0];
+            var v, w, name, value;
+            var valueSpecified = false;
+            var arg0 = arguments[0];
 
             if (typeof arg0 === "object" && arg0 !== null && "v" in arg0) {
                 v = arg0.v;
@@ -3980,8 +3986,8 @@ THE SOFTWARE.
         Graph.prototype.removeEdge = function(v, w, name) {
             var e = (arguments.length === 1
                 ? edgeObjToId(this._isDirected, arguments[0])
-                : edgeArgsToId(this._isDirected, v, w, name)),
-                edge = this._edgeObjs[e];
+                : edgeArgsToId(this._isDirected, v, w, name));
+            var edge = this._edgeObjs[e];
             if (edge) {
                 v = edge.v;
                 w = edge.w;
@@ -4076,8 +4082,8 @@ THE SOFTWARE.
         };
 
     },{"./graph":46,"./version":50}],48:[function(require,module,exports){
-        var _ = require("./lodash"),
-            Graph = require("./graph");
+        var _ = require("./lodash");
+        var Graph = require("./graph");
 
         module.exports = {
             write: write,
@@ -4102,9 +4108,9 @@ THE SOFTWARE.
 
         function writeNodes(g) {
             return _.map(g.nodes(), function(v) {
-                var nodeValue = g.node(v),
-                    parent = g.parent(v),
-                    node = { v: v };
+                var nodeValue = g.node(v);
+                var parent = g.parent(v);
+                var node = { v: v };
                 if (!_.isUndefined(nodeValue)) {
                     node.value = nodeValue;
                 }
@@ -4117,8 +4123,8 @@ THE SOFTWARE.
 
         function writeEdges(g) {
             return _.map(g.edges(), function(e) {
-                var edgeValue = g.edge(e),
-                    edge = { v: e.v, w: e.w };
+                var edgeValue = g.edge(e);
+                var edge = { v: e.v, w: e.w };
                 if (!_.isUndefined(e.name)) {
                     edge.name = e.name;
                 }
@@ -4168,7 +4174,9 @@ THE SOFTWARE.
                     union: require("lodash/union"),
                     values: require("lodash/values")
                 };
-            } catch (e) {}
+            } catch (e) {
+                // continue regardless of error
+            }
         }
 
         if (!lodash) {
@@ -4178,7 +4186,7 @@ THE SOFTWARE.
         module.exports = lodash;
 
     },{"lodash/clone":226,"lodash/constant":228,"lodash/each":230,"lodash/filter":232,"lodash/has":239,"lodash/isArray":243,"lodash/isEmpty":247,"lodash/isFunction":248,"lodash/isUndefined":258,"lodash/keys":259,"lodash/map":262,"lodash/reduce":274,"lodash/size":275,"lodash/transform":284,"lodash/union":285,"lodash/values":287}],50:[function(require,module,exports){
-        module.exports = '2.1.7';
+        module.exports = '2.1.8';
 
     },{}],51:[function(require,module,exports){
         var getNative = require('./_getNative'),
@@ -4964,16 +4972,10 @@ THE SOFTWARE.
                 value.forEach(function(subValue) {
                     result.add(baseClone(subValue, bitmask, customizer, subValue, value, stack));
                 });
-
-                return result;
-            }
-
-            if (isMap(value)) {
+            } else if (isMap(value)) {
                 value.forEach(function(subValue, key) {
                     result.set(key, baseClone(subValue, bitmask, customizer, key, value, stack));
                 });
-
-                return result;
             }
 
             var keysFunc = isFull
@@ -5941,8 +5943,8 @@ THE SOFTWARE.
                 return;
             }
             baseFor(source, function(srcValue, key) {
+                stack || (stack = new Stack);
                 if (isObject(srcValue)) {
-                    stack || (stack = new Stack);
                     baseMergeDeep(object, source, key, srcIndex, baseMerge, customizer, stack);
                 }
                 else {
@@ -6037,7 +6039,7 @@ THE SOFTWARE.
                     if (isArguments(objValue)) {
                         newValue = toPlainObject(objValue);
                     }
-                    else if (!isObject(objValue) || (srcIndex && isFunction(objValue))) {
+                    else if (!isObject(objValue) || isFunction(objValue)) {
                         newValue = initCloneObject(srcValue);
                     }
                 }
@@ -8684,7 +8686,7 @@ THE SOFTWARE.
 
     },{"./_freeGlobal":158}],209:[function(require,module,exports){
         /**
-         * Gets the value at `key`, unless `key` is "__proto__".
+         * Gets the value at `key`, unless `key` is "__proto__" or "constructor".
          *
          * @private
          * @param {Object} object The object to query.
@@ -8692,9 +8694,15 @@ THE SOFTWARE.
          * @returns {*} Returns the property value.
          */
         function safeGet(object, key) {
-            return key == '__proto__'
-                ? undefined
-                : object[key];
+            if (key === 'constructor' && typeof object[key] === 'function') {
+                return;
+            }
+
+            if (key == '__proto__') {
+                return;
+            }
+
+            return object[key];
         }
 
         module.exports = safeGet;

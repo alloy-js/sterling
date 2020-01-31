@@ -141,6 +141,14 @@
                     </div>
                 </div>
                 <div id='eval-display' class='eval-display'></div>
+                <div id='eval-settings' class='eval-settings'>
+                    <div id='settings-tabs' class='eval-tabs'>
+                        <div id='expressions-button' class='active'>Expressions</div>
+                        <div id='styling-button'>Styling</div>
+                    </div>
+                    <div id='eval-expressions' class='eval-expressions'></div>
+                    <div id='eval-styles' class='eval-styles'></div>
+                </div>
             </div>
         </div>
         <div id='source-view' class='body'>
@@ -160,7 +168,8 @@
                 .tree_view('#tree-view')
                 .source_view('#source-view')
                 .connect();
-            ui.show_eval();
+            // ui.show_eval();
+            ui.show_graph();
         </script>
     </body>
 </html>
